@@ -25,10 +25,9 @@ namespace API_TCC.Model
         public string nome { get; set; }
 
         [Required]
-        public float unidade_Medida { get; set; }
+        public string unidade_Medida { get; set; }
 
         [Required]
-        [StringLength(50)]
         public DateTime data_Cadastro { get; set; }
 
         [Required]
