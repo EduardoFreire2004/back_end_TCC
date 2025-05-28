@@ -11,13 +11,9 @@ namespace API_TCC.Model
         public int Id { get; set; }
 
         [Required]
-        [StringLength(35)]
-        public FornecedorAgrotoxico fornecedor { get; set; }
         public int fornecedorID { get; set; }
 
         [Required]
-        [StringLength(35)]
-        public TipoAgrotoxico tipo { get; set; }
         public int tipoID { get; set; }
 
         [Required]

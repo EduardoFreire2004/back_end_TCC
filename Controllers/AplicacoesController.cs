@@ -11,23 +11,23 @@ namespace API_TCC.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AplicacacoesController : ControllerBase
+    public class AplicacoesController : ControllerBase
     {
         private readonly Contexto _context;
 
-        public AplicacacoesController(Contexto context)
+        public AplicacoesController(Contexto context)
         {
             _context = context;
         }
 
-        // GET: api/Aplicacacoes
+        // GET: api/Aplicacoes
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Aplicacao>>> GetAplicacoes()
         {
             return await _context.Aplicacoes.ToListAsync();
         }
 
-        // GET: api/Aplicacacoes/5
+        // GET: api/Aplicacoes/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Aplicacao>> GetAplicacao(int id)
         {
@@ -41,7 +41,7 @@ namespace API_TCC.Controllers
             return aplicacao;
         }
 
-        // PUT: api/Aplicacacoes/5
+        // PUT: api/Aplicacoes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAplicacao(int id, Aplicacao aplicacao)
@@ -72,7 +72,7 @@ namespace API_TCC.Controllers
             return NoContent();
         }
 
-        // POST: api/Aplicacacoes
+        // POST: api/Aplicacoes
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Aplicacao>> PostAplicacao(Aplicacao aplicacao)
@@ -83,7 +83,7 @@ namespace API_TCC.Controllers
             return CreatedAtAction("GetAplicacao", new { id = aplicacao.Id }, aplicacao);
         }
 
-        // DELETE: api/Aplicacacoes/5
+        // DELETE: api/Aplicacoes/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAplicacao(int id)
         {

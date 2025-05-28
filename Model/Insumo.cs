@@ -11,21 +11,17 @@ namespace API_TCC.Model
         public int Id { get; set; }
 
         [Required]
-        [StringLength(35)]
-        public CategoriaInsumo categoria { get; set; }
-        public int categoriaID { get; set; }
+        public int categoriaInsumoID { get; set; }
 
         [Required]
-        [StringLength(35)]
-        public FornecedorAgrotoxico fornecedor { get; set; }
-        public int fornecedorID { get; set; }
+        public int fornecedorInsumoID { get; set; }
 
         [Required]
         [StringLength(100)]
         public string nome { get; set; }
 
         [Required]
-        public float unidade_Medida { get; set; }
+        public string unidade_Medida { get; set; }
 
         [Required]
         [StringLength(50)]

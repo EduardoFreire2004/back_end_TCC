@@ -10,9 +10,7 @@ namespace API_TCC.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [Required]
-        [StringLength(35)]
-        public Agrotoxico agrotoxico { get; set; }
+        [Required]       
         public int agrotoxicoID { get; set; }
 
         [Required]
@@ -24,3 +22,4 @@ namespace API_TCC.Model
 
     }
 }
+

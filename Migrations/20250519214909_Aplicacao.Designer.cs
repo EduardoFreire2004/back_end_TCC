@@ -4,6 +4,7 @@ using API_TCC.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_TCC.Migrations
 {
     [DbContext(typeof(Contexto))]
-    partial class ContextoModelSnapshot : ModelSnapshot
+    [Migration("20250519214909_Aplicacao")]
+    partial class Aplicacao
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -214,14 +217,14 @@ namespace API_TCC.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("categoriaInsumoID")
+                    b.Property<int>("categoriaID")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("data_Cadastro")
                         .HasMaxLength(50)
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("fornecedorInsumoID")
+                    b.Property<int>("fornecedorID")
                         .HasColumnType("int");
 
                     b.Property<string>("nome")
@@ -232,11 +235,14 @@ namespace API_TCC.Migrations
                     b.Property<float>("qtde")
                         .HasColumnType("real");
 
-                    b.Property<string>("unidade_Medida")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<float>("unidade_Medida")
+                        .HasColumnType("real");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("categoriaID");
+
+                    b.HasIndex("fornecedorID");
 
                     b.ToTable("Insumos");
                 });
@@ -409,6 +415,25 @@ namespace API_TCC.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tipo_Movimentacoes");
+                });
+
+            modelBuilder.Entity("API_TCC.Model.Insumo", b =>
+                {
+                    b.HasOne("API_TCC.Model.CategoriaInsumo", "categoria")
+                        .WithMany()
+                        .HasForeignKey("categoriaID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("API_TCC.Model.FornecedorAgrotoxico", "fornecedor")
+                        .WithMany()
+                        .HasForeignKey("fornecedorID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("categoria");
+
+                    b.Navigation("fornecedor");
                 });
 
             modelBuilder.Entity("API_TCC.Model.Lavoura", b =>
