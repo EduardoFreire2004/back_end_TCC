@@ -24,7 +24,6 @@ namespace API_TCC.Model
         public string unidade_Medida { get; set; }
 
         [Required]
-        [StringLength(50)]
         public DateTime data_Cadastro { get; set; }
 
         [Required]

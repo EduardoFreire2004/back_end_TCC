@@ -11,8 +11,6 @@ namespace API_TCC.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [StringLength(35)]
-        public Semente semente { get; set; }
         public int sementeID { get; set; }
 
         [Required]
