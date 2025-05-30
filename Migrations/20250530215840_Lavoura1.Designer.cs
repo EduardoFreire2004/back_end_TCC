@@ -4,6 +4,7 @@ using API_TCC.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_TCC.Migrations
 {
     [DbContext(typeof(Contexto))]
-    partial class ContextoModelSnapshot : ModelSnapshot
+    [Migration("20250530215840_Lavoura1")]
+    partial class Lavoura1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -248,23 +251,23 @@ namespace API_TCC.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("aplicacaoID")
+                    b.Property<int>("aplicacaoID")
                         .HasColumnType("int");
 
                     b.Property<float>("area")
                         .HasColumnType("real");
 
-                    b.Property<int?>("colheitaID")
+                    b.Property<int>("colheitaID")
                         .HasColumnType("int");
 
-                    b.Property<int?>("insumoID")
+                    b.Property<int>("insumoID")
                         .HasColumnType("int");
 
                     b.Property<string>("nome")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("plantioID")
+                    b.Property<int>("plantioID")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

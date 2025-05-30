@@ -12,7 +12,7 @@ namespace API_TCC.Model
         public int Id { get; set; }
 
         [Required]
-        public int fornecedorID { get; set; }
+        public int fornecedorSementeID { get; set; }
 
         [Required]
         [StringLength(100)]

@@ -4,6 +4,7 @@ using API_TCC.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_TCC.Migrations
 {
     [DbContext(typeof(Contexto))]
-    partial class ContextoModelSnapshot : ModelSnapshot
+    [Migration("20250530163732_semente1")]
+    partial class semente1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -248,26 +251,34 @@ namespace API_TCC.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("aplicacaoID")
+                    b.Property<int>("aplicacaoID")
                         .HasColumnType("int");
 
                     b.Property<float>("area")
                         .HasColumnType("real");
 
-                    b.Property<int?>("colheitaID")
+                    b.Property<int>("colheitaID")
                         .HasColumnType("int");
 
-                    b.Property<int?>("insumoID")
+                    b.Property<int>("insumoID")
                         .HasColumnType("int");
 
                     b.Property<string>("nome")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("plantioID")
+                    b.Property<int>("plantioID")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("aplicacaoID");
+
+                    b.HasIndex("colheitaID");
+
+                    b.HasIndex("insumoID");
+
+                    b.HasIndex("plantioID");
 
                     b.ToTable("Lavouras");
                 });
@@ -396,6 +407,41 @@ namespace API_TCC.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Tipo_Movimentacoes");
+                });
+
+            modelBuilder.Entity("API_TCC.Model.Lavoura", b =>
+                {
+                    b.HasOne("API_TCC.Model.Aplicacao", "aplicacao")
+                        .WithMany()
+                        .HasForeignKey("aplicacaoID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API_TCC.Model.Colheita", "colheita")
+                        .WithMany()
+                        .HasForeignKey("colheitaID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API_TCC.Model.Insumo", "insumo")
+                        .WithMany()
+                        .HasForeignKey("insumoID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API_TCC.Model.Plantio", "plantio")
+                        .WithMany()
+                        .HasForeignKey("plantioID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("aplicacao");
+
+                    b.Navigation("colheita");
+
+                    b.Navigation("insumo");
+
+                    b.Navigation("plantio");
                 });
 
             modelBuilder.Entity("API_TCC.Model.Movimentacao", b =>

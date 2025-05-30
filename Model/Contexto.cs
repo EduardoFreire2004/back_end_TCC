@@ -22,34 +22,6 @@ namespace API_TCC.Model
         public DbSet<Movimentacao> Movimentacoes { get; set; }
         public DbSet<CategoriaInsumo> Categorias_Insumos { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            // Aqui você define o comportamento de exclusão nas FK que estão dando problema
-            modelBuilder.Entity<Lavoura>()
-                .HasOne(l => l.insumo)
-                .WithMany()
-                .HasForeignKey(l => l.insumoID)
-                .OnDelete(DeleteBehavior.Restrict);  // Evita a cascata cíclica
-
-            modelBuilder.Entity<Lavoura>()
-                .HasOne(l => l.aplicacao)
-                .WithMany()
-                .HasForeignKey(l => l.aplicacaoID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Lavoura>()
-                .HasOne(l => l.plantio)
-                .WithMany()
-                .HasForeignKey(l => l.plantioID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Lavoura>()
-                .HasOne(l => l.colheita)
-                .WithMany()
-                .HasForeignKey(l => l.colheitaID)
-                .OnDelete(DeleteBehavior.Restrict);
-        }
+    
     }
 }
