@@ -11,12 +11,9 @@ namespace API_TCC.Model
         public int Id { get; set; }
 
         [Required]
-        [StringLength(35)]
-        public Lavoura lavoura { get; set; }
         public int lavouraID { get; set; }
 
         [Required]
-        [StringLength(35)]
         public TipoMovimentacao movimentacao { get; set; }
 
         [Required]

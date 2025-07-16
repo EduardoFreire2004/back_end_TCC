@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API_TCC.Model;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API_TCC.Controllers
 {

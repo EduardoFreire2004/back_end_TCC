@@ -10,13 +10,6 @@ namespace API_TCC.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        public int? insumoID { get; set; }
-
-        public int? aplicacaoID { get; set; }
-
-        public int? plantioID { get; set; }
-
-        public int? colheitaID { get; set; }
 
         [Required]
         public float area { get; set; }

@@ -1,25 +1,27 @@
 using API_TCC.Model;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddDbContext<Contexto>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("conexao")));
 
-// Add services to the container.
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin()// Permitir apenas a origem do React
-                  .AllowAnyMethod() // Permitir todos os métodos (GET, POST, PUT, DELETE)
-                  .AllowAnyHeader(); // Permitir todos os cabeçalhos
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod() 
+                  .AllowAnyHeader(); 
         });
 });
+// Add services to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -36,6 +38,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
+
+
 
 app.UseAuthorization();
 

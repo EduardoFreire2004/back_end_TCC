@@ -13,7 +13,6 @@ namespace API_TCC.Model
         [Required]       
         public int agrotoxicoID { get; set; }
 
-        [Required]
         [StringLength(100)]
         public string descricao { get; set; }
 
