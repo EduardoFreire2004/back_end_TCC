@@ -6,12 +6,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API_TCC.Model;
+using API_TCC.DTOs;
 
 namespace API_TCC.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
-    public class LavourasController : ControllerBase
+    public class LavourasController : BaseController
     {
         private readonly Contexto _context;
 
@@ -22,36 +22,82 @@ namespace API_TCC.Controllers
 
         // GET: api/Lavouras
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Lavoura>>> GetLavouras()
+        public async Task<ActionResult<IEnumerable<LavouraResponseDto>>> GetLavouras()
         {
-            return await _context.Lavouras.ToListAsync();
+            var usuarioId = GetUsuarioId();
+            var lavouras = await _context.Lavouras
+                .Where(l => l.UsuarioId == usuarioId)
+                .ToListAsync();
+
+            return lavouras.Select(l => new LavouraResponseDto
+            {
+                Id = l.Id,
+                nome = l.nome,
+                area = l.area,
+                latitude = l.latitude,
+                longitude = l.longitude
+            }).ToList();
         }
 
         // GET: api/Lavouras/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Lavoura>> GetLavoura(int id)
+        public async Task<ActionResult<LavouraResponseDto>> GetLavoura(int id)
         {
-            var lavoura = await _context.Lavouras.FindAsync(id);
+            var usuarioId = GetUsuarioId();
+            var lavoura = await _context.Lavouras
+                .FirstOrDefaultAsync(l => l.Id == id && l.UsuarioId == usuarioId);
 
             if (lavoura == null)
             {
                 return NotFound();
             }
 
-            return lavoura;
+            return new LavouraResponseDto
+            {
+                Id = lavoura.Id,
+                nome = lavoura.nome,
+                area = lavoura.area,
+                latitude = lavoura.latitude,
+                longitude = lavoura.longitude
+            };
+        }
+
+        // GET: api/Lavouras/nome/{nome}
+        [HttpGet("nome/{nome}")]
+        public async Task<ActionResult<IEnumerable<LavouraResponseDto>>> GetLavouraByNome(string nome)
+        {
+            var usuarioId = GetUsuarioId();
+            var lavouras = await _context.Lavouras
+                .Where(l => l.nome.Contains(nome) && l.UsuarioId == usuarioId)
+                .ToListAsync();
+
+            return lavouras.Select(l => new LavouraResponseDto
+            {
+                Id = l.Id,
+                nome = l.nome,
+                area = l.area,
+                latitude = l.latitude,
+                longitude = l.longitude
+            }).ToList();
         }
 
         // PUT: api/Lavouras/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLavoura(int id, Lavoura lavoura)
+        public async Task<IActionResult> PutLavoura(int id, LavouraDto lavouraDto)
         {
-            if (id != lavoura.Id)
+            var usuarioId = GetUsuarioId();
+            var lavouraExistente = await _context.Lavouras
+                .FirstOrDefaultAsync(l => l.Id == id && l.UsuarioId == usuarioId);
+
+            if (lavouraExistente == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(lavoura).State = EntityState.Modified;
+            lavouraExistente.nome = lavouraDto.nome;
+            lavouraExistente.area = lavouraDto.area;
+            lavouraExistente.latitude = lavouraDto.latitude;
+            lavouraExistente.longitude = lavouraDto.longitude;
 
             try
             {
@@ -73,21 +119,42 @@ namespace API_TCC.Controllers
         }
 
         // POST: api/Lavouras
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Lavoura>> PostLavoura(Lavoura lavoura)
+        public async Task<ActionResult<LavouraResponseDto>> PostLavoura(LavouraDto lavouraDto)
         {
+            var usuarioId = GetUsuarioId();
+
+            var lavoura = new Lavoura
+            {
+                UsuarioId = usuarioId,
+                nome = lavouraDto.nome,
+                area = lavouraDto.area,
+                latitude = lavouraDto.latitude,
+                longitude = lavouraDto.longitude
+            };
+
             _context.Lavouras.Add(lavoura);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetLavoura", new { id = lavoura.Id }, lavoura);
+            return CreatedAtAction(nameof(GetLavoura), new { id = lavoura.Id }, new LavouraResponseDto
+            {
+                Id = lavoura.Id,
+                nome = lavoura.nome,
+                area = lavoura.area,
+                latitude = lavoura.latitude,
+                longitude = lavoura.longitude
+            });
         }
 
         // DELETE: api/Lavouras/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLavoura(int id)
         {
-            var lavoura = await _context.Lavouras.FindAsync(id);
+            var usuarioId = GetUsuarioId();
+            var lavoura = await _context.Lavouras
+                .Where(l => l.Id == id && l.UsuarioId == usuarioId)
+                .FirstOrDefaultAsync();
+                
             if (lavoura == null)
             {
                 return NotFound();

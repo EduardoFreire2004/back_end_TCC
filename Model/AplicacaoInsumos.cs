@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API_TCC.Model
 {
-    [Table("Colheitas")]
-    public class Colheita
+    [Table("Aplicacao_Insumos")]
+    public class AplicacaoInsumos
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -20,28 +20,23 @@ namespace API_TCC.Model
         public virtual Lavoura lavoura { get; set; }
 
         [Required]
-        public string tipo { get; set; }
+        public int insumoID { get; set; }
 
-        [Required]
-        public DateTime dataHora { get; set; }
+        [ForeignKey(nameof(insumoID))]
+        public virtual Insumo insumo { get; set; }
 
         [StringLength(100)]
         public string descricao { get; set; }
 
         [Required]
-        public double quantidadeSacas { get; set; }
+        public DateTime dataHora { get; set; }
 
         [Required]
-        public double areaHectares { get; set; }
-
-        [Required]
-        public string cooperativaDestino { get; set; }
-
-        [Required]
-        public double precoPorSaca { get; set; }
+        public float qtde { get; set; }
 
         // Navegação
         [ForeignKey("UsuarioId")]
         public virtual Usuario? Usuario { get; set; }
     }
 }
+

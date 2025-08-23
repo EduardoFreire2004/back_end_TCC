@@ -10,69 +10,69 @@ using API_TCC.Model;
 namespace API_TCC.Controllers
 {
     [Route("api/[controller]")]
-    public class AplicacoesController : BaseController
+    public class AplicacaoInsumosController : BaseController
     {
         private readonly Contexto _context;
         private readonly IEstoqueService _estoqueService;
 
-        public AplicacoesController(Contexto context, IEstoqueService estoqueService)
+        public AplicacaoInsumosController(Contexto context, IEstoqueService estoqueService)
         {
             _context = context;
             _estoqueService = estoqueService;
         }
 
-        // GET: api/Aplicacoes
+        // GET: api/AplicacaoInsumos
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Aplicacao>>> GetAplicacoes()
+        public async Task<ActionResult<IEnumerable<AplicacaoInsumos>>> GetAplicacao_Insumos()
         {
             var usuarioId = GetUsuarioId();
-            return await _context.Aplicacoes
+            return await _context.Aplicacao_Insumos
                 .Where(a => a.UsuarioId == usuarioId)
                 .ToListAsync();
         }
 
-        // GET: api/Aplicacoes/5
+        // GET: api/AplicacaoInsumos/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Aplicacao>> GetAplicacao(int id)
+        public async Task<ActionResult<AplicacaoInsumos>> GetAplicacaoInsumos(int id)
         {
             var usuarioId = GetUsuarioId();
-            var aplicacao = await _context.Aplicacoes
+            var aplicacaoInsumos = await _context.Aplicacao_Insumos
                 .Where(a => a.Id == id && a.UsuarioId == usuarioId)
                 .FirstOrDefaultAsync();
 
-            if (aplicacao == null)
+            if (aplicacaoInsumos == null)
             {
                 return NotFound();
             }
 
-            return aplicacao;
+            return aplicacaoInsumos;
         }
 
         // GET: api/Aplicacoes/porlavoura/5
         [HttpGet("porlavoura/{lavouraId}")]
-        public async Task<ActionResult<IEnumerable<Aplicacao>>> GetAplicacoesPorLavoura(int lavouraId)
+        public async Task<ActionResult<IEnumerable<AplicacaoInsumos>>> GetAplicacoesPorLavoura(int lavouraId)
         {
             var usuarioId = GetUsuarioId();
-            var aplicacoes = await _context.Aplicacoes
+            var aplicacoes = await _context.Aplicacao_Insumos
                 .Where(a => a.lavouraID == lavouraId && a.UsuarioId == usuarioId)
                 .ToListAsync();
 
             return aplicacoes;
         }
 
-        // PUT: api/Aplicacoes/5
+        // PUT: api/AplicacaoInsumos/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutAplicacao(int id, Aplicacao aplicacao)
+        public async Task<IActionResult> PutAplicacaoInsumos(int id, AplicacaoInsumos aplicacaoInsumos)
         {
             var usuarioId = GetUsuarioId();
             
-            if (id != aplicacao.Id)
+            if (id != aplicacaoInsumos.Id)
             {
                 return BadRequest();
             }
 
             // Verificar se a aplicação pertence ao usuário
-            var aplicacaoExistente = await _context.Aplicacoes
+            var aplicacaoExistente = await _context.Aplicacao_Insumos
                 .Where(a => a.Id == id && a.UsuarioId == usuarioId)
                 .FirstOrDefaultAsync();
 
@@ -82,13 +82,13 @@ namespace API_TCC.Controllers
             }
 
             // Verificar se houve mudança na quantidade
-            if (aplicacao.qtde != aplicacaoExistente.qtde)
+            if (aplicacaoInsumos.qtde != aplicacaoExistente.qtde)
             {
                 // Se a nova quantidade for maior, verificar se há estoque suficiente
-                if (aplicacao.qtde > aplicacaoExistente.qtde)
+                if (aplicacaoInsumos.qtde > aplicacaoExistente.qtde)
                 {
-                    var quantidadeAdicional = aplicacao.qtde - aplicacaoExistente.qtde;
-                    var estoqueDisponivel = await _estoqueService.ObterEstoqueDisponivelAgrotoxicoAsync(aplicacao.agrotoxicoID, usuarioId);
+                    var quantidadeAdicional = aplicacaoInsumos.qtde - aplicacaoExistente.qtde;
+                    var estoqueDisponivel = await _estoqueService.ObterEstoqueDisponivelInsumoAsync(aplicacaoInsumos.insumoID, usuarioId);
                     
                     if (estoqueDisponivel < quantidadeAdicional)
                     {
@@ -96,20 +96,20 @@ namespace API_TCC.Controllers
                     }
                     
                     // Baixar estoque adicional
-                    await _estoqueService.BaixarEstoqueAgrotoxicoAsync(aplicacao.agrotoxicoID, quantidadeAdicional, usuarioId);
+                    await _estoqueService.BaixarEstoqueInsumoAsync(aplicacaoInsumos.insumoID, quantidadeAdicional, usuarioId);
                 }
                 // Se a nova quantidade for menor, retornar diferença ao estoque
-                else if (aplicacao.qtde < aplicacaoExistente.qtde)
+                else if (aplicacaoInsumos.qtde < aplicacaoExistente.qtde)
                 {
-                    var quantidadeRetornar = aplicacaoExistente.qtde - aplicacao.qtde;
-                    await _estoqueService.RetornarEstoqueAgrotoxicoAsync(aplicacao.agrotoxicoID, quantidadeRetornar, usuarioId);
+                    var quantidadeRetornar = aplicacaoExistente.qtde - aplicacaoInsumos.qtde;
+                    await _estoqueService.RetornarEstoqueInsumoAsync(aplicacaoInsumos.insumoID, quantidadeRetornar, usuarioId);
                 }
             }
 
             // Garantir que o UsuarioId não seja alterado
-            aplicacao.UsuarioId = usuarioId;
+            aplicacaoInsumos.UsuarioId = usuarioId;
 
-            _context.Entry(aplicacao).State = EntityState.Modified;
+            _context.Entry(aplicacaoInsumos).State = EntityState.Modified;
 
             try
             {
@@ -117,7 +117,7 @@ namespace API_TCC.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!AplicacaoExists(id, usuarioId))
+                if (!AplicacaoInsumosExists(id, usuarioId))
                 {
                     return NotFound();
                 }
@@ -130,55 +130,55 @@ namespace API_TCC.Controllers
             return NoContent();
         }
 
-        // POST: api/Aplicacoes
+        // POST: api/AplicacaoInsumos
         [HttpPost]
-        public async Task<ActionResult<Aplicacao>> PostAplicacao(Aplicacao aplicacao)
+        public async Task<ActionResult<AplicacaoInsumos>> PostAplicacaoInsumos(AplicacaoInsumos aplicacaoInsumos)
         {
             var usuarioId = GetUsuarioId();
-            aplicacao.UsuarioId = usuarioId;
+            aplicacaoInsumos.UsuarioId = usuarioId;
             
             // Verificar se há estoque suficiente
-            if (!await _estoqueService.VerificarEstoqueAgrotoxicoAsync(aplicacao.agrotoxicoID, aplicacao.qtde, usuarioId))
+            if (!await _estoqueService.VerificarEstoqueInsumoAsync(aplicacaoInsumos.insumoID, aplicacaoInsumos.qtde, usuarioId))
             {
-                var estoqueDisponivel = await _estoqueService.ObterEstoqueDisponivelAgrotoxicoAsync(aplicacao.agrotoxicoID, usuarioId);
-                return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoqueDisponivel}, Solicitado: {aplicacao.qtde}" });
+                var estoqueDisponivel = await _estoqueService.ObterEstoqueDisponivelInsumoAsync(aplicacaoInsumos.insumoID, usuarioId);
+                return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoqueDisponivel}, Solicitado: {aplicacaoInsumos.qtde}" });
             }
             
             // Baixar estoque
-            await _estoqueService.BaixarEstoqueAgrotoxicoAsync(aplicacao.agrotoxicoID, aplicacao.qtde, usuarioId);
+            await _estoqueService.BaixarEstoqueInsumoAsync(aplicacaoInsumos.insumoID, aplicacaoInsumos.qtde, usuarioId);
             
-            _context.Aplicacoes.Add(aplicacao);
+            _context.Aplicacao_Insumos.Add(aplicacaoInsumos);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetAplicacao", new { id = aplicacao.Id }, aplicacao);
+            return CreatedAtAction("GetAplicacaoInsumos", new { id = aplicacaoInsumos.Id }, aplicacaoInsumos);
         }
 
-        // DELETE: api/Aplicacoes/5
+        // DELETE: api/AplicacaoInsumos/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAplicacao(int id)
+        public async Task<IActionResult> DeleteAplicacaoInsumos(int id)
         {
             var usuarioId = GetUsuarioId();
-            var aplicacao = await _context.Aplicacoes
+            var aplicacaoInsumos = await _context.Aplicacao_Insumos
                 .Where(a => a.Id == id && a.UsuarioId == usuarioId)
                 .FirstOrDefaultAsync();
                 
-            if (aplicacao == null)
+            if (aplicacaoInsumos == null)
             {
                 return NotFound();
             }
 
             // Retornar quantidade ao estoque
-            await _estoqueService.RetornarEstoqueAgrotoxicoAsync(aplicacao.agrotoxicoID, aplicacao.qtde, usuarioId);
+            await _estoqueService.RetornarEstoqueInsumoAsync(aplicacaoInsumos.insumoID, aplicacaoInsumos.qtde, usuarioId);
 
-            _context.Aplicacoes.Remove(aplicacao);
+            _context.Aplicacao_Insumos.Remove(aplicacaoInsumos);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool AplicacaoExists(int id, int usuarioId)
+        private bool AplicacaoInsumosExists(int id, int usuarioId)
         {
-            return _context.Aplicacoes.Any(e => e.Id == id && e.UsuarioId == usuarioId);
+            return _context.Aplicacao_Insumos.Any(e => e.Id == id && e.UsuarioId == usuarioId);
         }
     }
 }

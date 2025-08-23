@@ -1,6 +1,66 @@
-@API_TCC_HostAddress = http://localhost:5209
+### Configuração da API de Autenticação FGL
 
-GET {{API_TCC_HostAddress}}/weatherforecast/
-Accept: application/json
+### 1. Cadastrar novo usuário
+POST {{baseUrl}}/api/auth/cadastrar
+Content-Type: application/json
 
-###
+{
+  "nome": "João Silva",
+  "email": "joao@email.com",
+  "senha": "123456",
+  "telefone": "(11) 99999-9999"
+}
+
+### 2. Login do usuário
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "joao@email.com",
+  "senha": "123456"
+}
+
+### 3. Login com usuário de teste
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "teste@email.com",
+  "senha": "123456"
+}
+
+### 4. Verificar token (requer autenticação)
+GET {{baseUrl}}/api/auth/verificar
+Authorization: Bearer {{authToken}}
+
+### 5. Obter perfil do usuário (requer autenticação)
+GET {{baseUrl}}/api/auth/perfil
+Authorization: Bearer {{authToken}}
+
+### 6. Renovar token usando refresh token
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### 7. Logout (requer autenticação)
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{authToken}}
+
+### 8. Testar endpoint protegido (exemplo com outro controller)
+GET {{baseUrl}}/api/lavouras
+Authorization: Bearer {{authToken}}
+
+### Variáveis de ambiente
+@baseUrl = https://localhost:7001
+@authToken = seu_token_jwt_aqui
+@refreshToken = seu_refresh_token_aqui
+
+### Instruções de uso:
+### 1. Execute o script SQL para criar as tabelas
+### 2. Faça o cadastro de um usuário
+### 3. Faça login para obter o token
+### 4. Use o token no header Authorization para endpoints protegidos
+### 5. Use o refresh token para renovar o token quando expirar

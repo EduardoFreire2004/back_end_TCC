@@ -6,13 +6,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API_TCC.Model;
+using API_TCC.DTOs;
 using Microsoft.AspNetCore.Authorization;
 
 namespace API_TCC.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
-    public class AgrotoxicosController : ControllerBase
+    public class AgrotoxicosController : BaseController
     {
         private readonly Contexto _context;
 
@@ -23,36 +23,112 @@ namespace API_TCC.Controllers
 
         // GET: api/Agrotoxicos
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Agrotoxico>>> GetAgrotoxicos()
+        public async Task<ActionResult<IEnumerable<AgrotoxicoResponseDto>>> GetAgrotoxicos()
         {
-            return await _context.Agrotoxicos.ToListAsync();
+            var usuarioId = GetUsuarioId();
+            var agrotoxicos = await _context.Agrotoxicos
+                .Where(a => a.UsuarioId == usuarioId)
+                .Include(a => a.fornecedor)
+                .Include(a => a.tipo)
+                .ToListAsync();
+
+            return agrotoxicos.Select(a => new AgrotoxicoResponseDto
+            {
+                Id = a.Id,
+                fornecedorID = a.fornecedorID,
+                tipoID = a.tipoID,
+                nome = a.nome,
+                unidade_Medida = a.unidade_Medida,
+                data_Cadastro = a.data_Cadastro,
+                qtde = a.qtde,
+                preco = a.preco,
+                FornecedorNome = a.fornecedor?.nome ?? string.Empty,
+                TipoNome = a.tipo?.descricao ?? string.Empty
+            }).ToList();
         }
 
         // GET: api/Agrotoxicos/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Agrotoxico>> GetAgrotoxico(int id)
+        public async Task<ActionResult<AgrotoxicoResponseDto>> GetAgrotoxico(int id)
         {
-            var agrotoxico = await _context.Agrotoxicos.FindAsync(id);
+            var usuarioId = GetUsuarioId();
+            var agrotoxico = await _context.Agrotoxicos
+                .Where(a => a.Id == id && a.UsuarioId == usuarioId)
+                .Include(a => a.fornecedor)
+                .Include(a => a.tipo)
+                .FirstOrDefaultAsync();
 
             if (agrotoxico == null)
             {
                 return NotFound();
             }
 
-            return agrotoxico;
+            return new AgrotoxicoResponseDto
+            {
+                Id = agrotoxico.Id,
+                fornecedorID = agrotoxico.fornecedorID,
+                tipoID = agrotoxico.tipoID,
+                nome = agrotoxico.nome,
+                unidade_Medida = agrotoxico.unidade_Medida,
+                data_Cadastro = agrotoxico.data_Cadastro,
+                qtde = agrotoxico.qtde,
+                preco = agrotoxico.preco,
+                FornecedorNome = agrotoxico.fornecedor?.nome ?? string.Empty,
+                TipoNome = agrotoxico.tipo?.descricao ?? string.Empty
+            };
+        }
+
+        // GET: api/Agrotoxicos/nome/{nome}
+        [HttpGet("nome/{nome}")]
+        public async Task<ActionResult<IEnumerable<AgrotoxicoResponseDto>>> GetAgrotoxicoByNome(string nome)
+        {
+            var usuarioId = GetUsuarioId();
+            var agrotoxicos = await _context.Agrotoxicos
+                .Where(a => a.nome.Contains(nome) && a.UsuarioId == usuarioId)
+                .Include(a => a.fornecedor)
+                .Include(a => a.tipo)
+                .ToListAsync();
+
+            if (agrotoxicos == null || agrotoxicos.Count == 0)
+            {
+                return NotFound();
+            }
+
+            return agrotoxicos.Select(a => new AgrotoxicoResponseDto
+            {
+                Id = a.Id,
+                fornecedorID = a.fornecedorID,
+                tipoID = a.tipoID,
+                nome = a.nome,
+                unidade_Medida = a.unidade_Medida,
+                data_Cadastro = a.data_Cadastro,
+                qtde = a.qtde,
+                preco = a.preco,
+                FornecedorNome = a.fornecedor?.nome ?? string.Empty,
+                TipoNome = a.tipo?.descricao ?? string.Empty
+            }).ToList();
         }
 
         // PUT: api/Agrotoxicos/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutAgrotoxico(int id, Agrotoxico agrotoxico)
+        public async Task<IActionResult> PutAgrotoxico(int id, AgrotoxicoDto agrotoxicoDto)
         {
-            if (id != agrotoxico.Id)
+            var usuarioId = GetUsuarioId();
+            var agrotoxicoExistente = await _context.Agrotoxicos
+                .FirstOrDefaultAsync(a => a.Id == id && a.UsuarioId == usuarioId);
+
+            if (agrotoxicoExistente == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(agrotoxico).State = EntityState.Modified;
+            agrotoxicoExistente.fornecedorID = agrotoxicoDto.fornecedorID;
+            agrotoxicoExistente.tipoID = agrotoxicoDto.tipoID;
+            agrotoxicoExistente.nome = agrotoxicoDto.nome;
+            agrotoxicoExistente.unidade_Medida = agrotoxicoDto.unidade_Medida;
+            agrotoxicoExistente.data_Cadastro = agrotoxicoDto.data_Cadastro;
+            agrotoxicoExistente.qtde = agrotoxicoDto.qtde;
+            agrotoxicoExistente.preco = agrotoxicoDto.preco;
 
             try
             {
@@ -74,21 +150,50 @@ namespace API_TCC.Controllers
         }
 
         // POST: api/Agrotoxicos
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Agrotoxico>> PostAgrotoxico(Agrotoxico agrotoxico)
+        public async Task<ActionResult<AgrotoxicoResponseDto>> PostAgrotoxico(AgrotoxicoDto agrotoxicoDto)
         {
+            var usuarioId = GetUsuarioId();
+
+            var agrotoxico = new Agrotoxico
+            {
+                UsuarioId = usuarioId,
+                fornecedorID = agrotoxicoDto.fornecedorID,
+                tipoID = agrotoxicoDto.tipoID,
+                nome = agrotoxicoDto.nome,
+                unidade_Medida = agrotoxicoDto.unidade_Medida,
+                data_Cadastro = agrotoxicoDto.data_Cadastro,
+                qtde = agrotoxicoDto.qtde,
+                preco = agrotoxicoDto.preco
+            };
+
             _context.Agrotoxicos.Add(agrotoxico);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetAgrotoxico", new { id = agrotoxico.Id }, agrotoxico);
+            return CreatedAtAction(nameof(GetAgrotoxico), new { id = agrotoxico.Id }, new AgrotoxicoResponseDto
+            {
+                Id = agrotoxico.Id,
+                fornecedorID = agrotoxico.fornecedorID,
+                tipoID = agrotoxico.tipoID,
+                nome = agrotoxico.nome,
+                unidade_Medida = agrotoxico.unidade_Medida,
+                data_Cadastro = agrotoxico.data_Cadastro,
+                qtde = agrotoxico.qtde,
+                preco = agrotoxico.preco,
+                FornecedorNome = string.Empty,
+                TipoNome = string.Empty
+            });
         }
 
         // DELETE: api/Agrotoxicos/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAgrotoxico(int id)
         {
-            var agrotoxico = await _context.Agrotoxicos.FindAsync(id);
+            var usuarioId = GetUsuarioId();
+            var agrotoxico = await _context.Agrotoxicos
+                .Where(a => a.Id == id && a.UsuarioId == usuarioId)
+                .FirstOrDefaultAsync();
+                
             if (agrotoxico == null)
             {
                 return NotFound();

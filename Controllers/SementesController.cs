@@ -10,8 +10,7 @@ using API_TCC.Model;
 namespace API_TCC.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
-    public class SementesController : ControllerBase
+    public class SementesController : BaseController
     {
         private readonly Contexto _context;
 
@@ -24,14 +23,20 @@ namespace API_TCC.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Semente>>> GetSementes()
         {
-            return await _context.Sementes.ToListAsync();
+            var usuarioId = GetUsuarioId();
+            return await _context.Sementes
+                .Where(s => s.UsuarioId == usuarioId)
+                .ToListAsync();
         }
 
         // GET: api/Sementes/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Semente>> GetSemente(int id)
         {
-            var semente = await _context.Sementes.FindAsync(id);
+            var usuarioId = GetUsuarioId();
+            var semente = await _context.Sementes
+                .Where(s => s.Id == id && s.UsuarioId == usuarioId)
+                .FirstOrDefaultAsync();
 
             if (semente == null)
             {
@@ -41,15 +46,47 @@ namespace API_TCC.Controllers
             return semente;
         }
 
+        // GET: api/Sementes/nome/{nome}
+        [HttpGet("nome/{nome}")]
+        public async Task<ActionResult<IEnumerable<Semente>>> GetSementeByNome(string nome)
+        {
+            var usuarioId = GetUsuarioId();
+            var sementes = await _context.Sementes
+                .Where(s => s.nome.Contains(nome) && s.UsuarioId == usuarioId)
+                .ToListAsync();
+
+            if (sementes == null || sementes.Count == 0)
+            {
+                return NotFound();
+            }
+
+            return sementes;
+        }
+
+
         // PUT: api/Sementes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
         public async Task<IActionResult> PutSemente(int id, Semente semente)
         {
+            var usuarioId = GetUsuarioId();
+            
             if (id != semente.Id)
             {
                 return BadRequest();
             }
+
+            // Verificar se a semente pertence ao usuário
+            var sementeExistente = await _context.Sementes
+                .Where(s => s.Id == id && s.UsuarioId == usuarioId)
+                .FirstOrDefaultAsync();
+
+            if (sementeExistente == null)
+            {
+                return NotFound();
+            }
+
+            // Garantir que o UsuarioId não seja alterado
+            semente.UsuarioId = usuarioId;
 
             _context.Entry(semente).State = EntityState.Modified;
 
@@ -59,7 +96,7 @@ namespace API_TCC.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!SementeExists(id))
+                if (!SementeExists(id, usuarioId))
                 {
                     return NotFound();
                 }
@@ -73,10 +110,12 @@ namespace API_TCC.Controllers
         }
 
         // POST: api/Sementes
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<Semente>> PostSemente(Semente semente)
         {
+            var usuarioId = GetUsuarioId();
+            semente.UsuarioId = usuarioId;
+            
             _context.Sementes.Add(semente);
             await _context.SaveChangesAsync();
 
@@ -87,7 +126,11 @@ namespace API_TCC.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSemente(int id)
         {
-            var semente = await _context.Sementes.FindAsync(id);
+            var usuarioId = GetUsuarioId();
+            var semente = await _context.Sementes
+                .Where(s => s.Id == id && s.UsuarioId == usuarioId)
+                .FirstOrDefaultAsync();
+                
             if (semente == null)
             {
                 return NotFound();
@@ -99,9 +142,9 @@ namespace API_TCC.Controllers
             return NoContent();
         }
 
-        private bool SementeExists(int id)
+        private bool SementeExists(int id, int usuarioId)
         {
-            return _context.Sementes.Any(e => e.Id == id);
+            return _context.Sementes.Any(e => e.Id == id && e.UsuarioId == usuarioId);
         }
     }
 }

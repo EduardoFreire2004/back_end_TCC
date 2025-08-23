@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API_TCC.Model
 {
-    [Table("Aplicacoes")]
-    public class Aplicacao
+    [Table("Fornecedores")]
+    public class Fornecedor
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -14,29 +14,19 @@ namespace API_TCC.Model
         public int UsuarioId { get; set; }
 
         [Required]
-        public int lavouraID { get; set; }
-
-        [ForeignKey(nameof(lavouraID))]
-        public virtual Lavoura lavoura { get; set; }
-
-        [Required]       
-        public int agrotoxicoID { get; set; }
-
-        [ForeignKey(nameof(agrotoxicoID))]
-        public virtual Agrotoxico agrotoxico { get; set; }
-
         [StringLength(100)]
-        public string descricao { get; set; }
+        public string nome { get; set; }
 
         [Required]
-        public DateTime dataHora { get; set; }
+        [StringLength(18)]
+        public string cnpj { get; set; }
 
         [Required]
-        public float qtde { get; set; }
+        [StringLength(18)]
+        public string telefone { get; set; }
 
         // Navegação
         [ForeignKey("UsuarioId")]
         public virtual Usuario? Usuario { get; set; }
     }
 }
-

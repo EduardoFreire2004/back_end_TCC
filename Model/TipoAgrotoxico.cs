@@ -11,8 +11,14 @@ namespace API_TCC.Model
         public int Id { get; set; }
 
         [Required]
+        public int UsuarioId { get; set; }
+
+        [Required]
         [StringLength(50)]
         public string descricao { get; set; }
 
+        // Navegação
+        [ForeignKey("UsuarioId")]
+        public virtual Usuario? Usuario { get; set; }
     }
 }

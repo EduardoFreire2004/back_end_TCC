@@ -11,7 +11,20 @@ namespace API_TCC.Model
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
+        [Required]
+        public int UsuarioId { get; set; }
+
+        [Required]
+        public int lavouraID { get; set; }
+
+        [ForeignKey(nameof(lavouraID))]
+        public virtual Lavoura lavoura { get; set; }
+
+        [Required]
         public int sementeID { get; set; }
+
+        [ForeignKey(nameof(sementeID))]
+        public virtual Semente semente { get; set; }
 
         [Required]
         [StringLength(50)]
@@ -23,5 +36,11 @@ namespace API_TCC.Model
         [Required]
         public float areaPlantada { get; set; }
 
+        [Required]
+        public float qtde { get; set; }
+
+        // Navegação
+        [ForeignKey("UsuarioId")]
+        public virtual Usuario? Usuario { get; set; }
     }
 }
