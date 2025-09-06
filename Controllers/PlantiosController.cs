@@ -60,6 +60,29 @@ namespace API_TCC.Controllers
             return plantios;
         }
 
+        // GET: api/Plantios/porlavoura/{lavouraId}/buscar?nome={nome}
+        [HttpGet("porlavoura/{lavouraId}/buscar")]
+        public async Task<ActionResult<IEnumerable<Plantio>>> GetByNome(string nome, int lavouraId)
+        {
+            try
+            {
+                var usuarioId = GetUsuarioId();
+                
+                var plantios = await _context.Plantios
+                    .Include(p => p.semente)
+                    .Where(p => p.lavouraID == lavouraId && 
+                               p.UsuarioId == usuarioId && 
+                               p.semente.nome.Contains(nome))
+                    .ToListAsync();
+
+                return plantios;
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Erro ao buscar por {nome}: {ex.Message}" });
+            }
+        }
+
         // PUT: api/Plantios/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutPlantio(int id, Plantio plantio)

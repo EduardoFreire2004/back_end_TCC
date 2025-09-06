@@ -41,7 +41,7 @@ namespace API_TCC.Model
         [Required]
         public float preco { get; set; }
 
-        // Navegação
+        
         [ForeignKey("UsuarioId")]
         public virtual Usuario? Usuario { get; set; }
     }

@@ -25,3 +25,4 @@ namespace API_TCC.DTOs
         public string telefone { get; set; } = string.Empty;
     }
 }
+

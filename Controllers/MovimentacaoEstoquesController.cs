@@ -100,6 +100,10 @@ namespace API_TCC.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // Validações básicas
+            if (dto.qtde <= 0)
+                return BadRequest("A quantidade deve ser maior que zero.");
+
             // Garantir que apenas um tipo de item foi enviado (não nulo e diferente de zero)
             bool agrotoxicoInformado = dto.agrotoxicoID.HasValue && dto.agrotoxicoID.Value != 0;
             bool sementeInformada = dto.sementeID.HasValue && dto.sementeID.Value != 0;
@@ -113,78 +117,120 @@ namespace API_TCC.Controllers
             if (tiposInformados != 1)
                 return BadRequest("Informe apenas um tipo de item (Agrotóxico, Semente ou Insumo) por movimentação.");
 
-            bool estoqueAtualizado = false;
-
-            // 1️⃣ Agrotóxico
-            if (agrotoxicoInformado)
-            {
-                var agrotoxico = await _context.Agrotoxicos.FindAsync(dto.agrotoxicoID.Value);
-                if (agrotoxico == null)
-                    return NotFound("Agrotóxico não encontrado.");
-
-                if (dto.movimentacao == TipoMovimentacao.Saida && agrotoxico.qtde < dto.qtde)
-                    return BadRequest("Estoque insuficiente para saída.");
-
-                agrotoxico.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
-                estoqueAtualizado = true;
-            }
-
-            // 2️⃣ Semente
-            if (sementeInformada)
-            {
-                var semente = await _context.Sementes.FindAsync(dto.sementeID.Value);
-                if (semente == null)
-                    return NotFound("Semente não encontrada.");
-
-                if (dto.movimentacao == TipoMovimentacao.Saida && semente.qtde < dto.qtde)
-                    return BadRequest("Estoque insuficiente para saída.");
-
-                semente.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
-                estoqueAtualizado = true;
-            }
-
-            // 3️⃣ Insumo
-            if (insumoInformado)
-            {
-                var insumo = await _context.Insumos.FindAsync(dto.insumoID.Value);
-                if (insumo == null)
-                    return NotFound("Insumo não encontrado.");
-
-                if (dto.movimentacao == TipoMovimentacao.Saida && insumo.qtde < dto.qtde)
-                    return BadRequest("Estoque insuficiente para saída.");
-
-                insumo.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
-                estoqueAtualizado = true;
-            }
-
-            if (!estoqueAtualizado)
-                return BadRequest("Erro ao atualizar estoque.");
-
-            var movimentacao = new MovimentacaoEstoque
-            {
-                lavouraID = dto.lavouraID,
-                movimentacao = dto.movimentacao,
-                agrotoxicoID = agrotoxicoInformado ? dto.agrotoxicoID : null,
-                sementeID = sementeInformada ? dto.sementeID : null,
-                insumoID = insumoInformado ? dto.insumoID : null,
-                qtde = dto.qtde,
-                dataHora = dto.dataHora,
-                descricao = dto.descricao,
-                UsuarioId = GetUsuarioId()
-            };
-
-            _context.MovimentacoesEstoque.Add(movimentacao);
-
+            // Usar transação para garantir consistência
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException ex)
-            {
-                return BadRequest($"Erro ao salvar movimentação: {ex.Message}");
-            }
+                bool estoqueAtualizado = false;
 
-            return CreatedAtAction("GetMovimentacaoEstoque", new { id = movimentacao.Id }, movimentacao);
+                // 1️⃣ Agrotóxico
+                if (agrotoxicoInformado)
+                {
+                    var agrotoxico = await _context.Agrotoxicos
+                        .Where(a => a.Id == dto.agrotoxicoID.Value && a.UsuarioId == GetUsuarioId())
+                        .FirstOrDefaultAsync();
+                    
+                    if (agrotoxico == null)
+                        return NotFound("Agrotóxico não encontrado.");
+
+                    if (dto.movimentacao == TipoMovimentacao.Saida)
+                    {
+                        if (agrotoxico.qtde < dto.qtde)
+                            return BadRequest($"Estoque insuficiente. Estoque atual: {agrotoxico.qtde}, Quantidade solicitada: {dto.qtde}");
+                    }
+
+                    agrotoxico.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
+                    
+                    // Garantir que o estoque não fique negativo
+                    if (agrotoxico.qtde < 0)
+                        agrotoxico.qtde = 0;
+                    
+                    estoqueAtualizado = true;
+                }
+
+                // 2️⃣ Semente
+                if (sementeInformada)
+                {
+                    var semente = await _context.Sementes
+                        .Where(s => s.Id == dto.sementeID.Value && s.UsuarioId == GetUsuarioId())
+                        .FirstOrDefaultAsync();
+                    
+                    if (semente == null)
+                        return NotFound("Semente não encontrada.");
+
+                    if (dto.movimentacao == TipoMovimentacao.Saida)
+                    {
+                        if (semente.qtde < dto.qtde)
+                            return BadRequest($"Estoque insuficiente. Estoque atual: {semente.qtde}, Quantidade solicitada: {dto.qtde}");
+                    }
+
+                    semente.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
+                    
+                    // Garantir que o estoque não fique negativo
+                    if (semente.qtde < 0)
+                        semente.qtde = 0;
+                    
+                    estoqueAtualizado = true;
+                }
+
+                // 3️⃣ Insumo
+                if (insumoInformado)
+                {
+                    var insumo = await _context.Insumos
+                        .Where(i => i.Id == dto.insumoID.Value && i.UsuarioId == GetUsuarioId())
+                        .FirstOrDefaultAsync();
+                    
+                    if (insumo == null)
+                        return NotFound("Insumo não encontrado.");
+
+                    if (dto.movimentacao == TipoMovimentacao.Saida)
+                    {
+                        if (insumo.qtde < dto.qtde)
+                            return BadRequest($"Estoque insuficiente. Estoque atual: {insumo.qtde}, Quantidade solicitada: {dto.qtde}");
+                    }
+
+                    insumo.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
+                    
+                    // Garantir que o estoque não fique negativo
+                    if (insumo.qtde < 0)
+                        insumo.qtde = 0;
+                    
+                    estoqueAtualizado = true;
+                }
+
+                if (!estoqueAtualizado)
+                    return BadRequest("Erro ao atualizar estoque.");
+
+                var movimentacao = new MovimentacaoEstoque
+                {
+                    lavouraID = dto.lavouraID,
+                    movimentacao = dto.movimentacao,
+                    agrotoxicoID = agrotoxicoInformado ? dto.agrotoxicoID : null,
+                    sementeID = sementeInformada ? dto.sementeID : null,
+                    insumoID = insumoInformado ? dto.insumoID : null,
+                    qtde = dto.qtde,
+                    dataHora = dto.dataHora,
+                    descricao = dto.descricao,
+                    UsuarioId = GetUsuarioId()
+                };
+
+                _context.MovimentacoesEstoque.Add(movimentacao);
+
+                // Salvar todas as alterações
+                await _context.SaveChangesAsync();
+                
+                // Commit da transação
+                await transaction.CommitAsync();
+
+                return CreatedAtAction("GetMovimentacaoEstoque", new { id = movimentacao.Id }, movimentacao);
+            }
+            catch (Exception ex)
+            {
+                // Rollback em caso de erro
+                await transaction.RollbackAsync();
+                return BadRequest($"Erro ao processar movimentação: {ex.Message}");
+            }
         }
 
 

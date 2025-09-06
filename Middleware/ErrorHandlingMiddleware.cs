@@ -7,11 +7,15 @@ namespace API_TCC.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ErrorHandlingMiddleware> _logger;
+        private readonly IWebHostEnvironment _environment;
 
-        public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
+        public ErrorHandlingMiddleware(RequestDelegate next, 
+                                     ILogger<ErrorHandlingMiddleware> logger,
+                                     IWebHostEnvironment environment)
         {
             _next = next;
             _logger = logger;
+            _environment = environment;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -22,12 +26,13 @@ namespace API_TCC.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro não tratado");
+                _logger.LogError(ex, "Erro não tratado na requisição: {Method} {Path}", 
+                    context.Request.Method, context.Request.Path);
                 await HandleExceptionAsync(context, ex);
             }
         }
 
-        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
             
@@ -47,10 +52,12 @@ namespace API_TCC.Middleware
                 message = statusCode == HttpStatusCode.InternalServerError 
                     ? "Erro interno do servidor" 
                     : exception.Message,
-                details = statusCode == HttpStatusCode.InternalServerError 
-                    ? "Ocorreu um erro inesperado" 
-                    : exception.Message,
-                timestamp = DateTime.UtcNow
+                details = _environment.IsDevelopment() 
+                    ? exception.ToString() 
+                    : "Ocorreu um erro inesperado",
+                timestamp = DateTime.UtcNow,
+                path = context.Request.Path,
+                method = context.Request.Method
             };
 
             var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions

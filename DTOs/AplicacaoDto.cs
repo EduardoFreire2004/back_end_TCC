@@ -2,47 +2,61 @@ using System.ComponentModel.DataAnnotations;
 
 namespace API_TCC.DTOs
 {
-    public class AplicacaoDto
+    public class AplicacaoCreateDto
     {
         [Required]
         public int lavouraID { get; set; }
 
         [Required]
-        public DateTime data_Aplicacao { get; set; }
+        public int agrotoxicoID { get; set; }
 
         [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "A quantidade deve ser maior que zero")]
+        public float qtde { get; set; }
+
+        [Required]
+        public DateTime dataHora { get; set; }
+
         [StringLength(100)]
-        public string tipo_Aplicacao { get; set; } = string.Empty;
+        public string? descricao { get; set; }
+    }
+
+    public class AplicacaoUpdateDto
+    {
+        [Required]
+        public int Id { get; set; }
 
         [Required]
-        [Range(0, double.MaxValue)]
-        public double quantidade_Aplicada { get; set; }
+        public int lavouraID { get; set; }
 
         [Required]
-        public string unidade_Medida { get; set; } = string.Empty;
+        public int agrotoxicoID { get; set; }
 
         [Required]
-        [Range(0, double.MaxValue)]
-        public double area_Aplicada { get; set; }
-
-        public string? observacoes { get; set; }
+        [Range(0.01, double.MaxValue, ErrorMessage = "A quantidade deve ser maior que zero")]
+        public float qtde { get; set; }
 
         [Required]
-        public string condicoes_Climaticas { get; set; } = string.Empty;
+        public DateTime dataHora { get; set; }
+
+        [StringLength(100)]
+        public string? descricao { get; set; }
     }
 
     public class AplicacaoResponseDto
     {
         public int Id { get; set; }
+        public int UsuarioId { get; set; }
         public int lavouraID { get; set; }
-        public DateTime data_Aplicacao { get; set; }
-        public string tipo_Aplicacao { get; set; } = string.Empty;
-        public double quantidade_Aplicada { get; set; }
-        public string unidade_Medida { get; set; } = string.Empty;
-        public double area_Aplicada { get; set; }
-        public string? observacoes { get; set; }
-        public string condicoes_Climaticas { get; set; } = string.Empty;
+        public int agrotoxicoID { get; set; }
+        public float qtde { get; set; }
+        public DateTime dataHora { get; set; }
+        public string? descricao { get; set; }
+        
+        // Campos de navegação
         public string LavouraNome { get; set; } = string.Empty;
+        public string AgrotoxicoNome { get; set; } = string.Empty;
+        public string AgrotoxicoUnidadeMedida { get; set; } = string.Empty;
     }
 }
 

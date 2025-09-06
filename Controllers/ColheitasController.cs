@@ -46,6 +46,8 @@ namespace API_TCC.Controllers
             return colheita;
         }
 
+
+
         // GET: api/Colheitas/porlavoura/5
         [HttpGet("porlavoura/{lavouraId}")]
         public async Task<ActionResult<IEnumerable<Colheita>>> GetColheitaPorLavoura(int lavouraId)
@@ -56,6 +58,28 @@ namespace API_TCC.Controllers
                 .ToListAsync();
 
             return colheitas;
+        }
+
+        // GET: api/Colheitas/porlavoura/{lavouraId}/buscar?nome={nome}
+        [HttpGet("porlavoura/{lavouraId}/buscar")]
+        public async Task<ActionResult<IEnumerable<Colheita>>> GetByNome(string nome, int lavouraId)
+        {
+            try
+            {
+                var usuarioId = GetUsuarioId();
+                
+                var colheitas = await _context.Colheitas
+                    .Where(c => c.lavouraID == lavouraId && 
+                               c.UsuarioId == usuarioId && 
+                               (c.descricao.Contains(nome) || c.tipo.Contains(nome)))
+                    .ToListAsync();
+
+                return colheitas;
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = $"Erro ao buscar por {nome}: {ex.Message}" });
+            }
         }
 
 

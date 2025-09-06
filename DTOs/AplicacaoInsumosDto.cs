@@ -2,39 +2,61 @@ using System.ComponentModel.DataAnnotations;
 
 namespace API_TCC.DTOs
 {
-    public class AplicacaoInsumosDto
+    public class AplicacaoInsumosCreateDto
     {
         [Required]
-        public int aplicacaoID { get; set; }
+        public int lavouraID { get; set; }
 
         [Required]
         public int insumoID { get; set; }
 
         [Required]
-        [Range(0, double.MaxValue)]
-        public double quantidade_Utilizada { get; set; }
+        [Range(0.01, double.MaxValue, ErrorMessage = "A quantidade deve ser maior que zero")]
+        public float qtde { get; set; }
 
         [Required]
-        public string unidade_Medida { get; set; } = string.Empty;
+        public DateTime dataHora { get; set; }
+
+        [StringLength(100)]
+        public string? descricao { get; set; }
+    }
+
+    public class AplicacaoInsumosUpdateDto
+    {
+        [Required]
+        public int Id { get; set; }
 
         [Required]
-        [Range(0, double.MaxValue)]
-        public double custo_Unitario { get; set; }
+        public int lavouraID { get; set; }
 
-        public string? observacoes { get; set; }
+        [Required]
+        public int insumoID { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "A quantidade deve ser maior que zero")]
+        public float qtde { get; set; }
+
+        [Required]
+        public DateTime dataHora { get; set; }
+
+        [StringLength(100)]
+        public string? descricao { get; set; }
     }
 
     public class AplicacaoInsumosResponseDto
     {
         public int Id { get; set; }
-        public int aplicacaoID { get; set; }
+        public int UsuarioId { get; set; }
+        public int lavouraID { get; set; }
         public int insumoID { get; set; }
-        public double quantidade_Utilizada { get; set; }
-        public string unidade_Medida { get; set; } = string.Empty;
-        public double custo_Unitario { get; set; }
-        public string? observacoes { get; set; }
+        public float qtde { get; set; }
+        public DateTime dataHora { get; set; }
+        public string? descricao { get; set; }
+        
+        // Campos de navegação
+        public string LavouraNome { get; set; } = string.Empty;
         public string InsumoNome { get; set; } = string.Empty;
-        public string AplicacaoTipo { get; set; } = string.Empty;
+        public string InsumoUnidadeMedida { get; set; } = string.Empty;
     }
 }
 

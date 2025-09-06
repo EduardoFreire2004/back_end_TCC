@@ -1,72 +1,78 @@
-using Dapper;
-using Microsoft.Data.SqlClient;
-using System.Data;
+using Microsoft.EntityFrameworkCore;
+using API_TCC.Model;
 
 namespace API_TCC.Model
 {
     public class UsuarioRepository : IUsuarioRepository
     {
-        private readonly string _connectionString;
+        private readonly Contexto _context;
 
-        public UsuarioRepository(IConfiguration configuration)
+        public UsuarioRepository(Contexto context)
         {
-            _connectionString = configuration.GetConnectionString("conexao")!;
+            _context = context;
         }
 
         public async Task<Usuario?> GetByIdAsync(int id)
         {
-            using var connection = new SqlConnection(_connectionString);
-            var sql = "SELECT * FROM Usuarios WHERE Id = @Id AND Ativo = 1";
-            return await connection.QueryFirstOrDefaultAsync<Usuario>(sql, new { Id = id });
+            return await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == id && u.Ativo);
         }
 
         public async Task<Usuario?> GetByEmailAsync(string email)
         {
-            using var connection = new SqlConnection(_connectionString);
-            var sql = "SELECT * FROM Usuarios WHERE Email = @Email AND Ativo = 1";
-            return await connection.QueryFirstOrDefaultAsync<Usuario>(sql, new { Email = email });
+            return await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Email == email && u.Ativo);
         }
 
         public async Task<Usuario> CreateAsync(Usuario usuario)
         {
-            using var connection = new SqlConnection(_connectionString);
-            var sql = @"
-                INSERT INTO Usuarios (Nome, Email, Senha, Telefone, DataCadastro, Ativo)
-                OUTPUT INSERTED.*
-                VALUES (@Nome, @Email, @Senha, @Telefone, @DataCadastro, @Ativo)";
+            // Definir valores padrão
+            usuario.DataCadastro = DateTime.UtcNow;
+            usuario.Ativo = true;
             
-            return await connection.QueryFirstAsync<Usuario>(sql, usuario);
+            _context.Usuarios.Add(usuario);
+            await _context.SaveChangesAsync();
+            
+            return usuario;
         }
 
         public async Task<Usuario> UpdateAsync(Usuario usuario)
         {
-            using var connection = new SqlConnection(_connectionString);
-            var sql = @"
-                UPDATE Usuarios 
-                SET Nome = @Nome, Email = @Email, Telefone = @Telefone
-                OUTPUT INSERTED.*
-                WHERE Id = @Id AND Ativo = 1";
+            var existingUsuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == usuario.Id && u.Ativo);
+                
+            if (existingUsuario == null)
+                throw new InvalidOperationException("Usuário não encontrado");
             
-            return await connection.QueryFirstAsync<Usuario>(sql, usuario);
+            existingUsuario.Nome = usuario.Nome;
+            existingUsuario.Email = usuario.Email;
+            existingUsuario.Telefone = usuario.Telefone;
+            
+            await _context.SaveChangesAsync();
+            return existingUsuario;
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            using var connection = new SqlConnection(_connectionString);
-            var sql = "UPDATE Usuarios SET Ativo = 0 WHERE Id = @Id";
-            var rowsAffected = await connection.ExecuteAsync(sql, new { Id = id });
-            return rowsAffected > 0;
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == id && u.Ativo);
+                
+            if (usuario == null)
+                return false;
+            
+            usuario.Ativo = false;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> EmailExistsAsync(string email)
         {
-            using var connection = new SqlConnection(_connectionString);
-            var sql = "SELECT COUNT(1) FROM Usuarios WHERE Email = @Email AND Ativo = 1";
-            var count = await connection.ExecuteScalarAsync<int>(sql, new { Email = email });
-            return count > 0;
+            return await _context.Usuarios
+                .AnyAsync(u => u.Email == email && u.Ativo);
         }
     }
 }
+
 
 
 

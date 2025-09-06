@@ -107,7 +107,7 @@ namespace API_TCC.Controllers
                 FornecedorNome = a.fornecedor?.nome ?? string.Empty,
                 TipoNome = a.tipo?.descricao ?? string.Empty
             }).ToList();
-        }
+        }   
 
         // PUT: api/Agrotoxicos/5
         [HttpPut("{id}")]
