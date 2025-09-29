@@ -160,7 +160,46 @@ namespace API_TCC.Controllers
                 return NotFound();
             }
 
+            // Excluir manualmente todas as entidades relacionadas à lavoura
+            // 1. Excluir Custos relacionados
+            var custos = await _context.Custo
+                .Where(c => c.LavouraId == id && c.UsuarioId == usuarioId)
+                .ToListAsync();
+            _context.Custo.RemoveRange(custos);
+
+            // 2. Excluir Aplicações de Agrotóxicos
+            var aplicacoes = await _context.Aplicacoes
+                .Where(a => a.lavouraID == id && a.UsuarioId == usuarioId)
+                .ToListAsync();
+            _context.Aplicacoes.RemoveRange(aplicacoes);
+
+            // 3. Excluir Aplicações de Insumos
+            var aplicacoesInsumos = await _context.Aplicacao_Insumos
+                .Where(ai => ai.lavouraID == id && ai.UsuarioId == usuarioId)
+                .ToListAsync();
+            _context.Aplicacao_Insumos.RemoveRange(aplicacoesInsumos);
+
+            // 4. Excluir Plantios
+            var plantios = await _context.Plantios
+                .Where(p => p.lavouraID == id && p.UsuarioId == usuarioId)
+                .ToListAsync();
+            _context.Plantios.RemoveRange(plantios);
+
+            // 5. Excluir Colheitas
+            var colheitas = await _context.Colheitas
+                .Where(c => c.lavouraID == id && c.UsuarioId == usuarioId)
+                .ToListAsync();
+            _context.Colheitas.RemoveRange(colheitas);
+
+            // 6. Excluir Movimentações de Estoque
+            var movimentacoes = await _context.MovimentacoesEstoque
+                .Where(m => m.lavouraID == id && m.UsuarioId == usuarioId)
+                .ToListAsync();
+            _context.MovimentacoesEstoque.RemoveRange(movimentacoes);
+
+            // 7. Finalmente, excluir a Lavoura
             _context.Lavouras.Remove(lavoura);
+            
             await _context.SaveChangesAsync();
 
             return NoContent();

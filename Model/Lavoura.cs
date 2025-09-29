@@ -26,5 +26,8 @@ namespace API_TCC.Model
         // Navegação
         [ForeignKey("UsuarioId")]
         public virtual Usuario? Usuario { get; set; }
+
+        // Coleção de custos relacionados a esta lavoura
+        public virtual ICollection<Custo> Custos { get; set; } = new List<Custo>();
     }
 }

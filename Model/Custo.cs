@@ -14,10 +14,10 @@ namespace API_TCC.Model
         public int UsuarioId { get; set; }
 
         [Required]
-        public int lavouraID { get; set; }
+        public int LavouraId { get; set; }
 
-        [ForeignKey(nameof(lavouraID))]
-        public virtual Lavoura lavoura { get; set; }
+        [ForeignKey(nameof(LavouraId))]
+        public virtual Lavoura Lavoura { get; set; }
 
         public int? aplicacaoAgrotoxicoID { get; set; }
 

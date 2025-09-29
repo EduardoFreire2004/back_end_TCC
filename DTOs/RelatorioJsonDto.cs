@@ -177,4 +177,3 @@ namespace API_TCC.DTOs
         public string? Error { get; set; }
     }
 }
-

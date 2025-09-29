@@ -50,7 +50,7 @@ namespace API_TCC.Model
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configuração para MovimentacaoEstoque - Lavoura (evitar cascata)
+            // Configuração para MovimentacaoEstoque - Lavoura (restrict para evitar ciclos)
             modelBuilder.Entity<MovimentacaoEstoque>()
                 .HasOne(m => m.Lavoura)
                 .WithMany()
@@ -139,9 +139,9 @@ namespace API_TCC.Model
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Custo>()
-                .HasOne(c => c.lavoura)
-                .WithMany()
-                .HasForeignKey(c => c.lavouraID)
+                .HasOne(c => c.Lavoura)
+                .WithMany(l => l.Custos)
+                .HasForeignKey(c => c.LavouraId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Custo>()
@@ -149,28 +149,28 @@ namespace API_TCC.Model
                 .WithMany()
                 .HasForeignKey(c => c.aplicacaoAgrotoxicoID)
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Custo>()
                 .HasOne(c => c.aplicacaoInsumo)
                 .WithMany()
                 .HasForeignKey(c => c.aplicacaoInsumoID)
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Custo>()
                 .HasOne(c => c.plantio)
                 .WithMany()
                 .HasForeignKey(c => c.plantioID)
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Custo>()
                 .HasOne(c => c.colheita)
                 .WithMany()
                 .HasForeignKey(c => c.colheitaID)
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.NoAction);
         }
 
         internal async Task GetEstatisticasColheita(int lavouraId)

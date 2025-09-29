@@ -52,7 +52,7 @@ namespace API_TCC.Controllers
         {
             var usuarioId = GetUsuarioId();
             var custos = await _context.Custo
-                .Where(c => c.lavouraID == lavouraId && c.UsuarioId == usuarioId)
+                .Where(c => c.LavouraId == lavouraId && c.UsuarioId == usuarioId)
                 .ToListAsync();
 
             if (custos == null || custos.Count == 0)
@@ -151,7 +151,7 @@ namespace API_TCC.Controllers
         public async Task<IActionResult> CalcularCustosEGanhos(int lavouraId)
         {
             var custos = await _context.Custo
-                .Where(c => c.lavouraID == lavouraId)
+                .Where(c => c.LavouraId == lavouraId)
                 .ToListAsync();
 
             if (!custos.Any())
@@ -160,7 +160,7 @@ namespace API_TCC.Controllers
                 Console.WriteLine($"Total de custos no banco: {todosCustos.Count}");
                 foreach (var c in todosCustos)
                 {
-                    Console.WriteLine($"Custo ID: {c.Id}, lavouraID: {c.lavouraID}");
+                    Console.WriteLine($"Custo ID: {c.Id}, LavouraId: {c.LavouraId}");
                 }
 
                 return NotFound("Nenhum custo encontrado para essa lavoura.");

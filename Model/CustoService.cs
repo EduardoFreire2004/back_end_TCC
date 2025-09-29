@@ -558,7 +558,7 @@ namespace API_TCC.Model
 
                 // Atualizar ou criar registro de custo na tabela Custos
                 var custoExistente = await _contexto.Custo
-                    .Where(c => c.lavouraID == lavouraId && c.UsuarioId == usuarioId)
+                    .Where(c => c.LavouraId == lavouraId && c.UsuarioId == usuarioId)
                     .FirstOrDefaultAsync();
 
                 if (custoExistente != null)
@@ -571,7 +571,7 @@ namespace API_TCC.Model
                     var novoCusto = new Custo
                     {
                         UsuarioId = usuarioId,
-                        lavouraID = lavouraId,
+                        LavouraId = lavouraId,
                         custoTotal = custoCalculado.CustoTotal,
                         ganhoTotal = 0
                     };
@@ -591,6 +591,8 @@ namespace API_TCC.Model
         }
     }
 }
+
+
 
 
 

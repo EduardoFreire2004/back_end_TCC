@@ -19,7 +19,7 @@ namespace API_TCC.Model
 
         [Required]
         [StringLength(18)]
-        public string cnpj { get; set; }
+        public string cnpj { get; set; } 
 
         [Required]
         [StringLength(18)]

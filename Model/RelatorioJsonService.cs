@@ -14,7 +14,7 @@ namespace API_TCC.Model
             _contexto = contexto;
         }
 
-        public async Task<RelatorioFornecedoresResponseDto> GerarRelatorioFornecedoresAsync(int usuarioId)
+        public async Task<RelatorioFornecedoresResponseDto> GerarRelatorioFornecedoresAsync(int usuarioId, int lavouraId)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace API_TCC.Model
             }
         }
 
-        public async Task<RelatorioAplicacaoResponseDto> GerarRelatorioAplicacaoAsync(int usuarioId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<RelatorioAplicacaoResponseDto> GerarRelatorioAplicacaoAsync(int usuarioId, int lavouraId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             try
             {
@@ -73,14 +73,14 @@ namespace API_TCC.Model
                     FROM Aplicacoes a
                     INNER JOIN Lavouras l ON a.lavouraID = l.Id
                     INNER JOIN Agrotoxicos ag ON a.agrotoxicoID = ag.Id
-                    WHERE l.UsuarioId = @UsuarioId";
+                    WHERE l.UsuarioId = @UsuarioId AND a.lavouraID = @LavouraId";
 
-                object parameters = new { UsuarioId = usuarioId };
+                object parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId };
 
                 if (dataInicio.HasValue && dataFim.HasValue)
                 {
                     sql += " AND a.dataHora BETWEEN @DataInicio AND @DataFim";
-                    parameters = new { UsuarioId = usuarioId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
+                    parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
                 }
 
                 sql += " ORDER BY a.dataHora DESC";
@@ -104,7 +104,7 @@ namespace API_TCC.Model
             }
         }
 
-        public async Task<RelatorioAplicacaoInsumoResponseDto> GerarRelatorioAplicacaoInsumoAsync(int usuarioId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<RelatorioAplicacaoInsumoResponseDto> GerarRelatorioAplicacaoInsumoAsync(int usuarioId, int lavouraId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             try
             {
@@ -121,14 +121,14 @@ namespace API_TCC.Model
                     FROM AplicacaoInsumos ai
                     INNER JOIN Insumos i ON ai.insumoID = i.Id
                     INNER JOIN Lavouras l ON ai.lavouraID = l.Id
-                    WHERE l.UsuarioId = @UsuarioId";
+                    WHERE l.UsuarioId = @UsuarioId AND ai.lavouraID = @LavouraId";
 
-                object parameters = new { UsuarioId = usuarioId };
+                object parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId };
 
                 if (dataInicio.HasValue && dataFim.HasValue)
                 {
                     sql += " AND ai.dataHora BETWEEN @DataInicio AND @DataFim";
-                    parameters = new { UsuarioId = usuarioId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
+                    parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
                 }
 
                 sql += " ORDER BY ai.dataHora DESC";
@@ -152,7 +152,7 @@ namespace API_TCC.Model
             }
         }
 
-        public async Task<RelatorioSementeResponseDto> GerarRelatorioSementeAsync(int usuarioId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<RelatorioSementeResponseDto> GerarRelatorioSementeAsync(int usuarioId, int lavouraId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             try
             {
@@ -202,7 +202,7 @@ namespace API_TCC.Model
             }
         }
 
-        public async Task<RelatorioInsumoResponseDto> GerarRelatorioInsumoAsync(int usuarioId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<RelatorioInsumoResponseDto> GerarRelatorioInsumoAsync(int usuarioId, int lavouraId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             try
             {
@@ -253,7 +253,7 @@ namespace API_TCC.Model
             }
         }
 
-        public async Task<RelatorioAgrotoxicoResponseDto> GerarRelatorioAgrotoxicoAsync(int usuarioId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<RelatorioAgrotoxicoResponseDto> GerarRelatorioAgrotoxicoAsync(int usuarioId, int lavouraId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             try
             {
@@ -304,7 +304,7 @@ namespace API_TCC.Model
             }
         }
 
-        public async Task<RelatorioColheitaResponseDto> GerarRelatorioColheitaAsync(int usuarioId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<RelatorioColheitaResponseDto> GerarRelatorioColheitaAsync(int usuarioId, int lavouraId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             try
             {
@@ -321,14 +321,14 @@ namespace API_TCC.Model
                         c.descricao as Observacoes
                     FROM Colheitas c
                     INNER JOIN Lavouras l ON c.lavouraID = l.Id
-                    WHERE l.UsuarioId = @UsuarioId";
+                    WHERE l.UsuarioId = @UsuarioId AND c.lavouraID = @LavouraId";
 
-                object parameters = new { UsuarioId = usuarioId };
+                object parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId };
 
                 if (dataInicio.HasValue && dataFim.HasValue)
                 {
                     sql += " AND c.dataHora BETWEEN @DataInicio AND @DataFim";
-                    parameters = new { UsuarioId = usuarioId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
+                    parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
                 }
 
                 sql += " ORDER BY c.dataHora DESC";
@@ -352,7 +352,7 @@ namespace API_TCC.Model
             }
         }
 
-        public async Task<RelatorioMovimentacaoEstoqueResponseDto> GerarRelatorioMovimentacaoEstoqueAsync(int usuarioId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<RelatorioMovimentacaoEstoqueResponseDto> GerarRelatorioMovimentacaoEstoqueAsync(int usuarioId, int lavouraId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             try
             {
@@ -372,14 +372,14 @@ namespace API_TCC.Model
                     LEFT JOIN Agrotoxicos ag ON me.agrotoxicoID = ag.Id
                     LEFT JOIN Sementes s ON me.sementeID = s.Id
                     LEFT JOIN Insumos i ON me.insumoID = i.Id
-                    WHERE l.UsuarioId = @UsuarioId";
+                    WHERE l.UsuarioId = @UsuarioId AND me.lavouraID = @LavouraId";
 
-                object parameters = new { UsuarioId = usuarioId };
+                object parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId };
 
                 if (dataInicio.HasValue && dataFim.HasValue)
                 {
                     sql += " AND me.dataHora BETWEEN @DataInicio AND @DataFim";
-                    parameters = new { UsuarioId = usuarioId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
+                    parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
                 }
 
                 sql += " ORDER BY me.dataHora DESC";
@@ -403,7 +403,7 @@ namespace API_TCC.Model
             }
         }
 
-        public async Task<RelatorioPlantioResponseDto> GerarRelatorioPlantioAsync(int usuarioId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<RelatorioPlantioResponseDto> GerarRelatorioPlantioAsync(int usuarioId, int lavouraId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
             try
             {
@@ -421,14 +421,14 @@ namespace API_TCC.Model
                     FROM Plantios p
                     INNER JOIN Lavouras l ON p.lavouraID = l.Id
                     INNER JOIN Sementes s ON p.sementeID = s.Id
-                    WHERE l.UsuarioId = @UsuarioId";
+                    WHERE l.UsuarioId = @UsuarioId AND p.lavouraID = @LavouraId";
 
-                object parameters = new { UsuarioId = usuarioId };
+                object parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId };
 
                 if (dataInicio.HasValue && dataFim.HasValue)
                 {
                     sql += " AND p.dataHora BETWEEN @DataInicio AND @DataFim";
-                    parameters = new { UsuarioId = usuarioId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
+                    parameters = new { UsuarioId = usuarioId, LavouraId = lavouraId, DataInicio = dataInicio.Value, DataFim = dataFim.Value };
                 }
 
                 sql += " ORDER BY p.dataHora DESC";
