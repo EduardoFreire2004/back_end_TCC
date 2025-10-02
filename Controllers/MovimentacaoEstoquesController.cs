@@ -117,6 +117,10 @@ namespace API_TCC.Controllers
             if (tiposInformados != 1)
                 return BadRequest("Informe apenas um tipo de item (Agrotóxico, Semente ou Insumo) por movimentação.");
 
+            // Restringir para apenas entradas vindas desta tela
+            if (dto.movimentacao != TipoMovimentacao.Entrada)
+                return BadRequest("Apenas movimentações do tipo Entrada são permitidas nesta tela. Saídas são geradas automaticamente por Aplicação, Plantio e Aplicação de Insumo.");
+
             // Usar transação para garantir consistência
             using var transaction = await _context.Database.BeginTransactionAsync();
             
@@ -134,13 +138,8 @@ namespace API_TCC.Controllers
                     if (agrotoxico == null)
                         return NotFound("Agrotóxico não encontrado.");
 
-                    if (dto.movimentacao == TipoMovimentacao.Saida)
-                    {
-                        if (agrotoxico.qtde < dto.qtde)
-                            return BadRequest($"Estoque insuficiente. Estoque atual: {agrotoxico.qtde}, Quantidade solicitada: {dto.qtde}");
-                    }
-
-                    agrotoxico.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
+                    // Apenas entrada
+                    agrotoxico.qtde += dto.qtde;
                     
                     // Garantir que o estoque não fique negativo
                     if (agrotoxico.qtde < 0)
@@ -159,13 +158,8 @@ namespace API_TCC.Controllers
                     if (semente == null)
                         return NotFound("Semente não encontrada.");
 
-                    if (dto.movimentacao == TipoMovimentacao.Saida)
-                    {
-                        if (semente.qtde < dto.qtde)
-                            return BadRequest($"Estoque insuficiente. Estoque atual: {semente.qtde}, Quantidade solicitada: {dto.qtde}");
-                    }
-
-                    semente.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
+                    // Apenas entrada
+                    semente.qtde += dto.qtde;
                     
                     // Garantir que o estoque não fique negativo
                     if (semente.qtde < 0)
@@ -184,13 +178,8 @@ namespace API_TCC.Controllers
                     if (insumo == null)
                         return NotFound("Insumo não encontrado.");
 
-                    if (dto.movimentacao == TipoMovimentacao.Saida)
-                    {
-                        if (insumo.qtde < dto.qtde)
-                            return BadRequest($"Estoque insuficiente. Estoque atual: {insumo.qtde}, Quantidade solicitada: {dto.qtde}");
-                    }
-
-                    insumo.qtde += dto.movimentacao == TipoMovimentacao.Entrada ? dto.qtde : -dto.qtde;
+                    // Apenas entrada
+                    insumo.qtde += dto.qtde;
                     
                     // Garantir que o estoque não fique negativo
                     if (insumo.qtde < 0)
@@ -205,7 +194,7 @@ namespace API_TCC.Controllers
                 var movimentacao = new MovimentacaoEstoque
                 {
                     lavouraID = dto.lavouraID,
-                    movimentacao = dto.movimentacao,
+                    movimentacao = TipoMovimentacao.Entrada,
                     agrotoxicoID = agrotoxicoInformado ? dto.agrotoxicoID : null,
                     sementeID = sementeInformada ? dto.sementeID : null,
                     insumoID = insumoInformado ? dto.insumoID : null,

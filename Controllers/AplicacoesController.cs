@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API_TCC.Model;
 using API_TCC.DTOs;
+using API_TCC.Enums;
 
 namespace API_TCC.Controllers
 {
@@ -226,6 +227,23 @@ namespace API_TCC.Controllers
                 };
                 
                 _context.Aplicacoes.Add(aplicacao);
+                await _context.SaveChangesAsync();
+
+                // Registrar movimentação de saída no estoque
+                var movimentacao = new MovimentacaoEstoque
+                {
+                    lavouraID = aplicacao.lavouraID,
+                    movimentacao = TipoMovimentacao.Saida,
+                    agrotoxicoID = aplicacao.agrotoxicoID,
+                    sementeID = null,
+                    insumoID = null,
+                    qtde = aplicacao.qtde,
+                    dataHora = aplicacao.dataHora,
+                    descricao = string.IsNullOrWhiteSpace(aplicacao.descricao) ? "Saída por Aplicação de Agrotóxico" : $"Saída por Aplicação de Agrotóxico - {aplicacao.descricao}",
+                    UsuarioId = usuarioId,
+                    origemAplicacaoID = aplicacao.Id
+                };
+                _context.MovimentacoesEstoque.Add(movimentacao);
                 await _context.SaveChangesAsync();
                 
                 // Commit da transação

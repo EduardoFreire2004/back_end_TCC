@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API_TCC.Model;
+using API_TCC.Enums;
 
 namespace API_TCC.Controllers
 {
@@ -171,6 +172,23 @@ namespace API_TCC.Controllers
             await _estoqueService.BaixarEstoqueSementeAsync(plantio.sementeID, plantio.qtde, usuarioId);
             
             _context.Plantios.Add(plantio);
+            await _context.SaveChangesAsync();
+
+            // Registrar movimentação de saída no estoque
+            var movimentacao = new MovimentacaoEstoque
+            {
+                lavouraID = plantio.lavouraID,
+                movimentacao = TipoMovimentacao.Saida,
+                agrotoxicoID = null,
+                sementeID = plantio.sementeID,
+                insumoID = null,
+                qtde = plantio.qtde,
+                dataHora = plantio.dataHora,
+                descricao = string.IsNullOrWhiteSpace(plantio.descricao) ? "Saída por Plantio de Semente" : $"Saída por Plantio de Semente - {plantio.descricao}",
+                UsuarioId = usuarioId,
+                origemPlantioID = plantio.Id
+            };
+            _context.MovimentacoesEstoque.Add(movimentacao);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetPlantio", new { id = plantio.Id }, plantio);
