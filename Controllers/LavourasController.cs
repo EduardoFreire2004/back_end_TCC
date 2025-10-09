@@ -34,8 +34,6 @@ namespace API_TCC.Controllers
                 Id = l.Id,
                 nome = l.nome,
                 area = l.area,
-                latitude = l.latitude,
-                longitude = l.longitude
             }).ToList();
         }
 
@@ -57,8 +55,6 @@ namespace API_TCC.Controllers
                 Id = lavoura.Id,
                 nome = lavoura.nome,
                 area = lavoura.area,
-                latitude = lavoura.latitude,
-                longitude = lavoura.longitude
             };
         }
 
@@ -76,8 +72,6 @@ namespace API_TCC.Controllers
                 Id = l.Id,
                 nome = l.nome,
                 area = l.area,
-                latitude = l.latitude,
-                longitude = l.longitude
             }).ToList();
         }
 
@@ -96,8 +90,6 @@ namespace API_TCC.Controllers
 
             lavouraExistente.nome = lavouraDto.nome;
             lavouraExistente.area = lavouraDto.area;
-            lavouraExistente.latitude = lavouraDto.latitude;
-            lavouraExistente.longitude = lavouraDto.longitude;
 
             try
             {
@@ -129,8 +121,6 @@ namespace API_TCC.Controllers
                 UsuarioId = usuarioId,
                 nome = lavouraDto.nome,
                 area = lavouraDto.area,
-                latitude = lavouraDto.latitude,
-                longitude = lavouraDto.longitude
             };
 
             _context.Lavouras.Add(lavoura);
@@ -141,8 +131,6 @@ namespace API_TCC.Controllers
                 Id = lavoura.Id,
                 nome = lavoura.nome,
                 area = lavoura.area,
-                latitude = lavoura.latitude,
-                longitude = lavoura.longitude
             });
         }
 

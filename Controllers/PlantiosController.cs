@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API_TCC.Model;
 using API_TCC.Enums;
+using API_TCC.DTOs;
 
 namespace API_TCC.Controllers
 {
@@ -24,59 +24,122 @@ namespace API_TCC.Controllers
 
         // GET: api/Plantios
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Plantio>>> GetPlantios()
+        public async Task<ActionResult<IEnumerable<PlantioDTO>>> GetPlantios()
         {
             var usuarioId = GetUsuarioId();
-            return await _context.Plantios
+
+            var plantios = await _context.Plantios
+                .Include(p => p.semente)
+                .Include(p => p.lavoura)
                 .Where(p => p.UsuarioId == usuarioId)
+                .Select(p => new PlantioDTO
+                {
+                    Id = p.Id,
+                    UsuarioId = p.UsuarioId,
+                    lavouraID = p.lavouraID,
+                    nomeLavoura = p.lavoura != null ? p.lavoura.nome : string.Empty,
+                    sementeID = p.sementeID,
+                    nomeSemente = p.semente != null ? p.semente.nome : string.Empty,
+                    descricao = p.descricao,
+                    dataHora = p.dataHora,
+                    areaPlantada = p.areaPlantada,
+                    qtde = p.qtde
+                })
                 .ToListAsync();
+
+            return Ok(plantios);
         }
 
         // GET: api/Plantios/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Plantio>> GetPlantio(int id)
+        public async Task<ActionResult<PlantioDTO>> GetPlantio(int id)
         {
             var usuarioId = GetUsuarioId();
+
             var plantio = await _context.Plantios
+                .Include(p => p.semente)
+                .Include(p => p.lavoura)
                 .Where(p => p.Id == id && p.UsuarioId == usuarioId)
+                .Select(p => new PlantioDTO
+                {
+                    Id = p.Id,
+                    UsuarioId = p.UsuarioId,
+                    lavouraID = p.lavouraID,
+                    nomeLavoura = p.lavoura != null ? p.lavoura.nome : string.Empty,
+                    sementeID = p.sementeID,
+                    nomeSemente = p.semente != null ? p.semente.nome : string.Empty,
+                    descricao = p.descricao,
+                    dataHora = p.dataHora,
+                    areaPlantada = p.areaPlantada,
+                    qtde = p.qtde
+                })
                 .FirstOrDefaultAsync();
 
             if (plantio == null)
-            {
                 return NotFound();
-            }
 
-            return plantio;
+            return Ok(plantio);
         }
 
         // GET: api/Plantios/porlavoura/5
         [HttpGet("porlavoura/{lavouraId}")]
-        public async Task<ActionResult<IEnumerable<Plantio>>> GetPlantioPorLavoura(int lavouraId)
+        public async Task<ActionResult<IEnumerable<PlantioDTO>>> GetPlantioPorLavoura(int lavouraId)
         {
             var usuarioId = GetUsuarioId();
+
             var plantios = await _context.Plantios
+                .Include(p => p.semente)
+                .Include(p => p.lavoura)
                 .Where(p => p.lavouraID == lavouraId && p.UsuarioId == usuarioId)
+                .Select(p => new PlantioDTO
+                {
+                    Id = p.Id,
+                    UsuarioId = p.UsuarioId,
+                    lavouraID = p.lavouraID,
+                    nomeLavoura = p.lavoura != null ? p.lavoura.nome : string.Empty,
+                    sementeID = p.sementeID,
+                    nomeSemente = p.semente != null ? p.semente.nome : string.Empty,
+                    descricao = p.descricao,
+                    dataHora = p.dataHora,
+                    areaPlantada = p.areaPlantada,
+                    qtde = p.qtde
+                })
                 .ToListAsync();
 
-            return plantios;
+            return Ok(plantios);
         }
 
         // GET: api/Plantios/porlavoura/{lavouraId}/buscar?nome={nome}
         [HttpGet("porlavoura/{lavouraId}/buscar")]
-        public async Task<ActionResult<IEnumerable<Plantio>>> GetByNome(string nome, int lavouraId)
+        public async Task<ActionResult<IEnumerable<PlantioDTO>>> GetByNome(string nome, int lavouraId)
         {
             try
             {
                 var usuarioId = GetUsuarioId();
-                
+
                 var plantios = await _context.Plantios
                     .Include(p => p.semente)
-                    .Where(p => p.lavouraID == lavouraId && 
-                               p.UsuarioId == usuarioId && 
-                               p.semente.nome.Contains(nome))
+                    .Include(p => p.lavoura)
+                    .Where(p => p.lavouraID == lavouraId &&
+                                p.UsuarioId == usuarioId &&
+                                p.semente != null &&
+                                EF.Functions.Like(p.semente.nome, $"%{nome}%"))
+                    .Select(p => new PlantioDTO
+                    {
+                        Id = p.Id,
+                        UsuarioId = p.UsuarioId,
+                        lavouraID = p.lavouraID,
+                        nomeLavoura = p.lavoura != null ? p.lavoura.nome : string.Empty,
+                        sementeID = p.sementeID,
+                        nomeSemente = p.semente != null ? p.semente.nome : string.Empty,
+                        descricao = p.descricao,
+                        dataHora = p.dataHora,
+                        areaPlantada = p.areaPlantada,
+                        qtde = p.qtde
+                    })
                     .ToListAsync();
 
-                return plantios;
+                return Ok(plantios);
             }
             catch (Exception ex)
             {
@@ -86,112 +149,113 @@ namespace API_TCC.Controllers
 
         // PUT: api/Plantios/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPlantio(int id, Plantio plantio)
+        public async Task<IActionResult> PutPlantio(int id, PlantioUpdateDTO dto)
         {
             var usuarioId = GetUsuarioId();
-            
-            if (id != plantio.Id)
-            {
-                return BadRequest();
-            }
 
-            // Verificar se o plantio pertence ao usuário
+            if (id != dto.Id)
+                return BadRequest();
+
             var plantioExistente = await _context.Plantios
                 .Where(p => p.Id == id && p.UsuarioId == usuarioId)
                 .FirstOrDefaultAsync();
 
             if (plantioExistente == null)
-            {
                 return NotFound();
-            }
 
-            // Verificar se houve mudança na quantidade
-            if (plantio.qtde != plantioExistente.qtde)
+            // Controle de estoque se houve mudança de quantidade
+            if (dto.qtde != plantioExistente.qtde)
             {
-                // Se a nova quantidade for maior, verificar se há estoque suficiente
-                if (plantio.qtde > plantioExistente.qtde)
+                if (dto.qtde > plantioExistente.qtde)
                 {
-                    var quantidadeAdicional = plantio.qtde - plantioExistente.qtde;
-                    var estoqueDisponivel = await _estoqueService.ObterEstoqueDisponivelSementeAsync(plantio.sementeID, usuarioId);
-                    
-                    if (estoqueDisponivel < quantidadeAdicional)
-                    {
-                        return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoqueDisponivel}, Necessário: {quantidadeAdicional}" });
-                    }
-                    
-                    // Baixar estoque adicional
-                    await _estoqueService.BaixarEstoqueSementeAsync(plantio.sementeID, quantidadeAdicional, usuarioId);
-                }
-                // Se a nova quantidade for menor, retornar diferença ao estoque
-                else if (plantio.qtde < plantioExistente.qtde)
-                {
-                    var quantidadeRetornar = plantioExistente.qtde - plantio.qtde;
-                    await _estoqueService.RetornarEstoqueSementeAsync(plantio.sementeID, quantidadeRetornar, usuarioId);
-                }
-            }
+                    var adicional = dto.qtde - plantioExistente.qtde;
+                    var estoque = await _estoqueService.ObterEstoqueDisponivelSementeAsync(dto.sementeID, usuarioId);
 
-            // Garantir que o UsuarioId não seja alterado
-            plantio.UsuarioId = usuarioId;
+                    if (estoque < adicional)
+                        return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoque}, Necessário: {adicional}" });
 
-            _context.Entry(plantio).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!PlantioExists(id, usuarioId))
-                {
-                    return NotFound();
+                    await _estoqueService.BaixarEstoqueSementeAsync(dto.sementeID, adicional, usuarioId);
                 }
                 else
                 {
-                    throw;
+                    var retorno = plantioExistente.qtde - dto.qtde;
+                    await _estoqueService.RetornarEstoqueSementeAsync(dto.sementeID, retorno, usuarioId);
                 }
             }
+
+            // Atualiza os campos necessários
+            plantioExistente.lavouraID = dto.lavouraID;
+            plantioExistente.sementeID = dto.sementeID;
+            plantioExistente.descricao = dto.descricao;
+            plantioExistente.dataHora = dto.dataHora;
+            plantioExistente.areaPlantada = dto.areaPlantada;
+            plantioExistente.qtde = dto.qtde;
+
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
         // POST: api/Plantios
         [HttpPost]
-        public async Task<ActionResult<Plantio>> PostPlantio(Plantio plantio)
+        public async Task<ActionResult<PlantioDTO>> PostPlantio(PlantioCreateDTO dto)
         {
             var usuarioId = GetUsuarioId();
-            plantio.UsuarioId = usuarioId;
-            
-            // Verificar se há estoque suficiente
-            if (!await _estoqueService.VerificarEstoqueSementeAsync(plantio.sementeID, plantio.qtde, usuarioId))
+
+            if (!await _estoqueService.VerificarEstoqueSementeAsync(dto.sementeID, dto.qtde, usuarioId))
             {
-                var estoqueDisponivel = await _estoqueService.ObterEstoqueDisponivelSementeAsync(plantio.sementeID, usuarioId);
-                return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoqueDisponivel}, Solicitado: {plantio.qtde}" });
+                var estoque = await _estoqueService.ObterEstoqueDisponivelSementeAsync(dto.sementeID, usuarioId);
+                return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoque}, Solicitado: {dto.qtde}" });
             }
-            
-            // Baixar estoque
-            await _estoqueService.BaixarEstoqueSementeAsync(plantio.sementeID, plantio.qtde, usuarioId);
-            
+
+            await _estoqueService.BaixarEstoqueSementeAsync(dto.sementeID, dto.qtde, usuarioId);
+
+            var plantio = new Plantio
+            {
+                lavouraID = dto.lavouraID,
+                sementeID = dto.sementeID,
+                descricao = dto.descricao,
+                dataHora = dto.dataHora,
+                areaPlantada = dto.areaPlantada,
+                qtde = dto.qtde,
+                UsuarioId = usuarioId
+            };
+
             _context.Plantios.Add(plantio);
             await _context.SaveChangesAsync();
 
-            // Registrar movimentação de saída no estoque
+            // Registrar movimentação após salvar (para ter o Id)
             var movimentacao = new MovimentacaoEstoque
             {
                 lavouraID = plantio.lavouraID,
                 movimentacao = TipoMovimentacao.Saida,
-                agrotoxicoID = null,
                 sementeID = plantio.sementeID,
-                insumoID = null,
                 qtde = plantio.qtde,
                 dataHora = plantio.dataHora,
-                descricao = string.IsNullOrWhiteSpace(plantio.descricao) ? "Saída por Plantio de Semente" : $"Saída por Plantio de Semente - {plantio.descricao}",
+                descricao = string.IsNullOrWhiteSpace(dto.descricao)
+                    ? "Saída por Plantio de Semente"
+                    : $"Saída por Plantio de Semente - {dto.descricao}",
                 UsuarioId = usuarioId,
                 origemPlantioID = plantio.Id
             };
+
             _context.MovimentacoesEstoque.Add(movimentacao);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetPlantio", new { id = plantio.Id }, plantio);
+            // Retorno formatado em DTO
+            var result = new PlantioDTO
+            {
+                Id = plantio.Id,
+                UsuarioId = usuarioId,
+                lavouraID = plantio.lavouraID,
+                sementeID = plantio.sementeID,
+                descricao = plantio.descricao,
+                dataHora = plantio.dataHora,
+                areaPlantada = plantio.areaPlantada,
+                qtde = plantio.qtde
+            };
+
+            return CreatedAtAction(nameof(GetPlantio), new { id = plantio.Id }, result);
         }
 
         // DELETE: api/Plantios/5
@@ -199,27 +263,25 @@ namespace API_TCC.Controllers
         public async Task<IActionResult> DeletePlantio(int id)
         {
             var usuarioId = GetUsuarioId();
+
             var plantio = await _context.Plantios
                 .Where(p => p.Id == id && p.UsuarioId == usuarioId)
                 .FirstOrDefaultAsync();
-                
-            if (plantio == null)
-            {
-                return NotFound();
-            }
 
-            // Retornar quantidade ao estoque
+            if (plantio == null)
+                return NotFound();
+
             await _estoqueService.RetornarEstoqueSementeAsync(plantio.sementeID, plantio.qtde, usuarioId);
 
             _context.Plantios.Remove(plantio);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new { message = "Plantio excluído com sucesso" });
         }
 
         private bool PlantioExists(int id, int usuarioId)
         {
-            return _context.Plantios.Any(e => e.Id == id && e.UsuarioId == usuarioId);
+            return _context.Plantios.Any(p => p.Id == id && p.UsuarioId == usuarioId);
         }
     }
 }

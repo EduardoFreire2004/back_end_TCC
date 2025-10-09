@@ -12,11 +12,6 @@ namespace API_TCC.DTOs
         [Range(0, float.MaxValue)]
         public float area { get; set; }
 
-        [Required]
-        public float latitude { get; set; }
-
-        [Required]
-        public float longitude { get; set; }
     }
 
     public class LavouraResponseDto
@@ -24,7 +19,6 @@ namespace API_TCC.DTOs
         public int Id { get; set; }
         public string nome { get; set; } = string.Empty;
         public float area { get; set; }
-        public float latitude { get; set; }
-        public float longitude { get; set; }
+
     }
 }

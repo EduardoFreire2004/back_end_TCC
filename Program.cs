@@ -56,8 +56,6 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IEstoqueService, EstoqueService>();
-builder.Services.AddScoped<IRelatorioService, RelatorioService>();
-builder.Services.AddScoped<IRelatorioJsonService, RelatorioJsonService>();
 builder.Services.AddScoped<ICustoService, CustoService>();
 
 // Add services to the container.

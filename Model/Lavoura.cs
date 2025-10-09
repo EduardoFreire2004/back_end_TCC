@@ -19,10 +19,6 @@ namespace API_TCC.Model
         [Required]
         public string nome { get; set; }
 
-        public float latitude { get; set; }
-
-        public float longitude { get; set; }
-
         // Navegação
         [ForeignKey("UsuarioId")]
         public virtual Usuario? Usuario { get; set; }
