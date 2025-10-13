@@ -192,6 +192,82 @@ namespace API_TCC.Controllers
             return Ok(dados);
         }
 
+        #endregion
+
+        #region === RELATÓRIOS DE ITENS CADASTRADOS ===
+
+        [HttpGet("agrotoxico")]
+        public async Task<IActionResult> RelatorioAgrotoxico()
+        {
+            var usuarioId = GetUsuarioId();
+
+            var dados = await _context.Agrotoxicos
+                .Include(x => x.fornecedor)
+                .Include(x => x.tipo)
+                .Where(x => x.UsuarioId == usuarioId)
+                .Select(x => new RelatorioAgrotoxicoDTO
+                {
+                    Id = x.Id,
+                    nome = x.nome,
+                    tipo = x.tipo.descricao,
+                    fonecedor = x.fornecedor.nome,
+                    unidadeMedida = x.unidade_Medida,
+                    qtde = x.qtde,
+                    preco = x.preco,
+                    DataHora = x.data_Cadastro
+                })
+                .ToListAsync();
+
+            return Ok(dados);
+        }
+
+        [HttpGet("insumo")]
+        public async Task<IActionResult> RelatorioInsumo()
+        {
+            var usuarioId = GetUsuarioId();
+
+            var dados = await _context.Insumos
+                .Include(x => x.fornecedor)
+                .Include(x => x.categoriaInsumo)
+                .Where(x => x.UsuarioId == usuarioId)
+                .Select(x => new RelatorioInsumoDTO
+                {
+                    Id = x.Id,
+                    nome = x.nome,
+                    categoria = x.categoriaInsumo.descricao,
+                    fonecedor = x.fornecedor.nome,
+                    unidadeMedida = x.unidade_Medida,
+                    qtde = x.qtde,
+                    preco = x.preco,
+                    DataHora = x.data_Cadastro
+                })
+                .ToListAsync();
+
+            return Ok(dados);
+        }
+
+        [HttpGet("semente")]
+        public async Task<IActionResult> RelatorioSemente()
+        {
+            var usuarioId = GetUsuarioId();
+
+            var dados = await _context.Sementes
+                .Include(x => x.fornecedor)
+                .Where(x => x.UsuarioId == usuarioId)
+                .Select(x => new RelatorioSementeDTO
+                {
+                    Id = x.Id,
+                    nome = x.nome,
+                    tipo = x.tipo,
+                    fonecedor = x.fornecedor.nome,
+                    marca = x.marca,
+                    preco = x.preco,
+                    DataHora = x.data_Cadastro
+                })
+                .ToListAsync();
+
+            return Ok(dados);
+        }
 
         #endregion
     }

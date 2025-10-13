@@ -52,4 +52,39 @@
         public double Quantidade { get; set; }
         public DateTime DataHora { get; set; }
     }
+
+    public class RelatorioAgrotoxicoDTO
+    {
+        public int Id { get; set; }
+        public string nome { get; set; }
+        public string tipo { get; set; }
+        public string fonecedor { get; set; }
+        public string unidadeMedida { get; set; }
+        public float qtde { get; set; }
+        public float preco { get; set; }
+        public DateTime DataHora { get; set; }
+    }
+
+    public class RelatorioInsumoDTO
+    {
+        public int Id { get; set; }
+        public string nome { get; set; }
+        public string categoria { get; set; }
+        public string fonecedor { get; set; }
+        public string unidadeMedida { get; set; }
+        public float qtde { get; set; }
+        public float preco { get; set; }
+        public DateTime DataHora { get; set; }
+    }
+
+    public class RelatorioSementeDTO
+    {
+        public int Id { get; set; }
+        public string nome { get; set; }
+        public string tipo { get; set; }
+        public string fonecedor { get; set; }
+        public string marca { get; set; }
+        public float preco { get; set; }
+        public DateTime DataHora { get; set; }
+    }
 }
