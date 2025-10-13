@@ -1,15 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API_TCC.Model;
+using API_TCC.DTOs;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using API_TCC.DTOs.API_TCC.DTOs;
 
 namespace API_TCC.Controllers
 {
     [Route("api/[controller]")]
+    [ApiController]
     public class SementesController : BaseController
     {
         private readonly Contexto _context;
@@ -21,105 +22,128 @@ namespace API_TCC.Controllers
 
         // GET: api/Sementes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Semente>>> GetSementes()
+        public async Task<ActionResult<IEnumerable<SementeDTO>>> GetSementes()
         {
             var usuarioId = GetUsuarioId();
-            return await _context.Sementes
+
+            var sementes = await _context.Sementes
                 .Where(s => s.UsuarioId == usuarioId)
+                .Select(s => new SementeDTO
+                {
+                    Id = s.Id,
+                    FornecedorID = s.fornecedorID,
+                    Nome = s.nome,
+                    Tipo = s.tipo,
+                    Marca = s.marca,
+                    Qtde = s.qtde,
+                    Preco = s.preco,
+                    Data_Cadastro = s.data_Cadastro
+                })
                 .ToListAsync();
+
+            return Ok(sementes);
         }
 
         // GET: api/Sementes/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Semente>> GetSemente(int id)
+        public async Task<ActionResult<SementeDTO>> GetSemente(int id)
         {
             var usuarioId = GetUsuarioId();
-            var semente = await _context.Sementes
-                .Where(s => s.Id == id && s.UsuarioId == usuarioId)
+
+            var s = await _context.Sementes
+                .Where(x => x.Id == id && x.UsuarioId == usuarioId)
+                .Select(x => new SementeDTO
+                {
+                    Id = x.Id,
+                    FornecedorID = x.fornecedorID,
+                    Nome = x.nome,
+                    Tipo = x.tipo,
+                    Marca = x.marca,
+                    Qtde = x.qtde,
+                    Preco = x.preco,
+                    Data_Cadastro = x.data_Cadastro
+                })
                 .FirstOrDefaultAsync();
 
-            if (semente == null)
-            {
+            if (s == null)
                 return NotFound();
-            }
 
-            return semente;
+            return Ok(s);
         }
 
-        // GET: api/Sementes/nome/{nome}
         [HttpGet("nome/{nome}")]
-        public async Task<ActionResult<IEnumerable<Semente>>> GetSementeByNome(string nome)
+        public async Task<ActionResult<IEnumerable<SementeDTO>>> GetSementeByNome(string nome)
         {
             var usuarioId = GetUsuarioId();
+
             var sementes = await _context.Sementes
-                .Where(s => s.nome.Contains(nome) && s.UsuarioId == usuarioId)
+                .Where(i => i.nome.Contains(nome) && i.UsuarioId == usuarioId)
+                .Select(i => new SementeDTO
+                {
+                    Id = i.Id,
+                    FornecedorID = i.fornecedorID,
+                    Nome = i.nome,
+                    Tipo = i.tipo,
+                    Marca = i.marca,
+                    Qtde = i.qtde,
+                    Preco = i.preco,
+                    Data_Cadastro = i.data_Cadastro
+                })
                 .ToListAsync();
 
             if (sementes == null || sementes.Count == 0)
-            {
                 return NotFound();
-            }
 
-            return sementes;
-        }
-
-
-        // PUT: api/Sementes/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutSemente(int id, Semente semente)
-        {
-            var usuarioId = GetUsuarioId();
-            
-            if (id != semente.Id)
-            {
-                return BadRequest();
-            }
-
-            // Verificar se a semente pertence ao usuário
-            var sementeExistente = await _context.Sementes
-                .Where(s => s.Id == id && s.UsuarioId == usuarioId)
-                .FirstOrDefaultAsync();
-
-            if (sementeExistente == null)
-            {
-                return NotFound();
-            }
-
-            // Garantir que o UsuarioId não seja alterado
-            semente.UsuarioId = usuarioId;
-
-            _context.Entry(semente).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!SementeExists(id, usuarioId))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return Ok(sementes);
         }
 
         // POST: api/Sementes
         [HttpPost]
-        public async Task<ActionResult<Semente>> PostSemente(Semente semente)
+        public async Task<ActionResult<Semente>> PostSemente(SementeDTO dto)
         {
             var usuarioId = GetUsuarioId();
-            semente.UsuarioId = usuarioId;
-            
+
+            var semente = new Semente
+            {
+                UsuarioId = usuarioId,
+                fornecedorID = dto.FornecedorID,
+                nome = dto.Nome,
+                tipo = dto.Tipo,
+                marca = dto.Marca,
+                qtde = (float)dto.Qtde,
+                preco = (float)dto.Preco,
+                data_Cadastro = dto.Data_Cadastro
+            };
+
             _context.Sementes.Add(semente);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetSemente", new { id = semente.Id }, semente);
+            return CreatedAtAction(nameof(GetSemente), new { id = semente.Id }, dto);
+        }
+
+        // PUT: api/Sementes/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutSemente(int id, SementeDTO dto)
+        {
+            var usuarioId = GetUsuarioId();
+
+            var semente = await _context.Sementes
+                .FirstOrDefaultAsync(s => s.Id == id && s.UsuarioId == usuarioId);
+
+            if (semente == null)
+                return NotFound();
+
+            semente.fornecedorID = dto.FornecedorID;
+            semente.nome = dto.Nome;
+            semente.tipo = dto.Tipo;
+            semente.marca = dto.Marca;
+            semente.qtde = (float)dto.Qtde;
+            semente.preco = (float)dto.Preco;
+            semente.data_Cadastro = dto.Data_Cadastro;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
 
         // DELETE: api/Sementes/5
@@ -127,24 +151,17 @@ namespace API_TCC.Controllers
         public async Task<IActionResult> DeleteSemente(int id)
         {
             var usuarioId = GetUsuarioId();
+
             var semente = await _context.Sementes
-                .Where(s => s.Id == id && s.UsuarioId == usuarioId)
-                .FirstOrDefaultAsync();
-                
+                .FirstOrDefaultAsync(s => s.Id == id && s.UsuarioId == usuarioId);
+
             if (semente == null)
-            {
                 return NotFound();
-            }
 
             _context.Sementes.Remove(semente);
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool SementeExists(int id, int usuarioId)
-        {
-            return _context.Sementes.Any(e => e.Id == id && e.UsuarioId == usuarioId);
         }
     }
 }

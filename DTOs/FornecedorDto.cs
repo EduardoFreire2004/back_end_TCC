@@ -2,27 +2,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace API_TCC.DTOs
 {
-    public class FornecedorDto
+    namespace API_TCC.DTOs
     {
-        [Required]
-        [StringLength(100)]
-        public string nome { get; set; } = string.Empty;
-
-        [Required]
-        [StringLength(18)]
-        public string cnpj { get; set; } = string.Empty;
-
-        [Required]
-        [StringLength(18)]
-        public string telefone { get; set; } = string.Empty;
+        public class FornecedorDTO
+        {
+            public int Id { get; set; }
+            public string Nome { get; set; }
+            public string Cnpj { get; set; }
+            public string Telefone { get; set; }
+        }
     }
 
-    public class FornecedorResponseDto
-    {
-        public int Id { get; set; }
-        public string nome { get; set; } = string.Empty;
-        public string cnpj { get; set; } = string.Empty;
-        public string telefone { get; set; } = string.Empty;
-    }
 }
 
