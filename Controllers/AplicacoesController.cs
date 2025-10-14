@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API_TCC.Model;
@@ -114,61 +113,40 @@ namespace API_TCC.Controllers
         public async Task<IActionResult> PutAplicacao(int id, AplicacaoUpdateDto dto)
         {
             var usuarioId = GetUsuarioId();
-            
-            if (id != dto.Id)
-            {
-                return BadRequest();
-            }
 
-            // Verificar se a aplicação pertence ao usuário
+            if (id != dto.Id)
+                return BadRequest();
+
             var aplicacaoExistente = await _context.Aplicacoes
                 .Where(a => a.Id == id && a.UsuarioId == usuarioId)
                 .FirstOrDefaultAsync();
 
             if (aplicacaoExistente == null)
-            {
                 return NotFound();
-            }
 
-            // Usar transação para garantir consistência
             using var transaction = await _context.Database.BeginTransactionAsync();
-            
+
             try
             {
-                // Verificar se houve mudança na quantidade
                 if (dto.qtde != aplicacaoExistente.qtde)
                 {
-                    // Se a nova quantidade for maior, verificar se há estoque suficiente
                     if (dto.qtde > aplicacaoExistente.qtde)
                     {
-                        var quantidadeAdicional = dto.qtde - aplicacaoExistente.qtde;
-                        var estoqueDisponivel = await _estoqueService.ObterEstoqueDisponivelAgrotoxicoAsync(dto.agrotoxicoID, usuarioId);
-                        
-                        if (estoqueDisponivel < quantidadeAdicional)
-                        {
-                            return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoqueDisponivel}, Necessário: {quantidadeAdicional}" });
-                        }
-                        
-                        // Baixar estoque adicional
-                        var baixouEstoque = await _estoqueService.BaixarEstoqueAgrotoxicoAsync(dto.agrotoxicoID, quantidadeAdicional, usuarioId);
-                        if (!baixouEstoque)
-                        {
-                            return BadRequest(new { message = "Erro ao baixar estoque adicional" });
-                        }
+                        var adicional = dto.qtde - aplicacaoExistente.qtde;
+                        var estoque = await _estoqueService.ObterEstoqueDisponivelAgrotoxicoAsync(dto.agrotoxicoID, usuarioId);
+
+                        if (estoque < adicional)
+                            return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoque}, Necessário: {adicional}" });
+
+                        await _estoqueService.BaixarEstoqueAgrotoxicoAsync(dto.agrotoxicoID, adicional, usuarioId);
                     }
-                    // Se a nova quantidade for menor, retornar diferença ao estoque
-                    else if (dto.qtde < aplicacaoExistente.qtde)
+                    else
                     {
-                        var quantidadeRetornar = aplicacaoExistente.qtde - dto.qtde;
-                        var retornouEstoque = await _estoqueService.RetornarEstoqueAgrotoxicoAsync(dto.agrotoxicoID, quantidadeRetornar, usuarioId);
-                        if (!retornouEstoque)
-                        {
-                            return BadRequest(new { message = "Erro ao retornar estoque" });
-                        }
+                        var retorno = aplicacaoExistente.qtde - dto.qtde;
+                        await _estoqueService.RetornarEstoqueAgrotoxicoAsync(dto.agrotoxicoID, retorno, usuarioId);
                     }
                 }
 
-                // Atualizar a aplicação
                 aplicacaoExistente.lavouraID = dto.lavouraID;
                 aplicacaoExistente.agrotoxicoID = dto.agrotoxicoID;
                 aplicacaoExistente.qtde = dto.qtde;
@@ -177,13 +155,27 @@ namespace API_TCC.Controllers
 
                 _context.Entry(aplicacaoExistente).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
-                
-                // Commit da transação
+
+                // Atualizar movimentação associada
+                var mov = await _context.MovimentacoesEstoque
+                    .FirstOrDefaultAsync(m => m.origemAplicacaoID == aplicacaoExistente.Id && m.UsuarioId == usuarioId);
+
+                if (mov != null)
+                {
+                    mov.qtde = dto.qtde;
+                    mov.dataHora = dto.dataHora;
+                    mov.descricao = string.IsNullOrWhiteSpace(dto.descricao)
+                        ? "Saída por Aplicação de Agrotóxico"
+                        : $"Saída por Aplicação de Agrotóxico - {dto.descricao}";
+
+                    _context.Entry(mov).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+                }
+
                 await transaction.CommitAsync();
             }
             catch (Exception ex)
             {
-                // Rollback em caso de erro
                 await transaction.RollbackAsync();
                 return BadRequest(new { message = $"Erro ao atualizar aplicação: {ex.Message}" });
             }
@@ -196,26 +188,17 @@ namespace API_TCC.Controllers
         public async Task<ActionResult<AplicacaoResponseDto>> PostAplicacao(AplicacaoCreateDto dto)
         {
             var usuarioId = GetUsuarioId();
-            
-            // Verificar se há estoque suficiente
-            var estoqueDisponivel = await _estoqueService.ObterEstoqueDisponivelAgrotoxicoAsync(dto.agrotoxicoID, usuarioId);
-            if (estoqueDisponivel < dto.qtde)
-            {
-                return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoqueDisponivel}, Solicitado: {dto.qtde}" });
-            }
-            
-            // Usar transação para garantir consistência
+
+            var estoque = await _estoqueService.ObterEstoqueDisponivelAgrotoxicoAsync(dto.agrotoxicoID, usuarioId);
+            if (estoque < dto.qtde)
+                return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoque}, Solicitado: {dto.qtde}" });
+
             using var transaction = await _context.Database.BeginTransactionAsync();
-            
+
             try
             {
-                // Baixar estoque
-                var baixouEstoque = await _estoqueService.BaixarEstoqueAgrotoxicoAsync(dto.agrotoxicoID, dto.qtde, usuarioId);
-                if (!baixouEstoque)
-                {
-                    return BadRequest(new { message = "Erro ao baixar estoque" });
-                }
-                
+                await _estoqueService.BaixarEstoqueAgrotoxicoAsync(dto.agrotoxicoID, dto.qtde, usuarioId);
+
                 var aplicacao = new Aplicacao
                 {
                     lavouraID = dto.lavouraID,
@@ -225,32 +208,30 @@ namespace API_TCC.Controllers
                     descricao = dto.descricao,
                     UsuarioId = usuarioId
                 };
-                
+
                 _context.Aplicacoes.Add(aplicacao);
                 await _context.SaveChangesAsync();
 
-                // Registrar movimentação de saída no estoque
-                var movimentacao = new MovimentacaoEstoque
+                var mov = new MovimentacaoEstoque
                 {
                     lavouraID = aplicacao.lavouraID,
                     movimentacao = TipoMovimentacao.Saida,
                     agrotoxicoID = aplicacao.agrotoxicoID,
-                    sementeID = null,
-                    insumoID = null,
                     qtde = aplicacao.qtde,
                     dataHora = aplicacao.dataHora,
-                    descricao = string.IsNullOrWhiteSpace(aplicacao.descricao) ? "Saída por Aplicação de Agrotóxico" : $"Saída por Aplicação de Agrotóxico - {aplicacao.descricao}",
+                    descricao = string.IsNullOrWhiteSpace(aplicacao.descricao)
+                        ? "Saída por Aplicação de Agrotóxico"
+                        : $"Saída por Aplicação de Agrotóxico - {aplicacao.descricao}",
                     UsuarioId = usuarioId,
                     origemAplicacaoID = aplicacao.Id
                 };
-                _context.MovimentacoesEstoque.Add(movimentacao);
+
+                _context.MovimentacoesEstoque.Add(mov);
                 await _context.SaveChangesAsync();
-                
-                // Commit da transação
+
                 await transaction.CommitAsync();
-                
-                // Retornar a aplicação criada com dados de navegação
-                var aplicacaoCriada = await _context.Aplicacoes
+
+                var response = await _context.Aplicacoes
                     .Where(a => a.Id == aplicacao.Id)
                     .Include(a => a.lavoura)
                     .Include(a => a.agrotoxico)
@@ -269,11 +250,10 @@ namespace API_TCC.Controllers
                     })
                     .FirstOrDefaultAsync();
 
-                return CreatedAtAction("GetAplicacao", new { id = aplicacao.Id }, aplicacaoCriada);
+                return CreatedAtAction("GetAplicacao", new { id = aplicacao.Id }, response);
             }
             catch (Exception ex)
             {
-                // Rollback em caso de erro
                 await transaction.RollbackAsync();
                 return BadRequest(new { message = $"Erro ao criar aplicação: {ex.Message}" });
             }
@@ -285,45 +265,38 @@ namespace API_TCC.Controllers
         {
             var usuarioId = GetUsuarioId();
             var aplicacao = await _context.Aplicacoes
-                .Where(a => a.Id == id && a.UsuarioId == usuarioId)
-                .FirstOrDefaultAsync();
-                
-            if (aplicacao == null)
-            {
-                return NotFound();
-            }
+                .FirstOrDefaultAsync(a => a.Id == id && a.UsuarioId == usuarioId);
 
-            // Usar transação para garantir consistência
+            if (aplicacao == null)
+                return NotFound();
+
             using var transaction = await _context.Database.BeginTransactionAsync();
-            
+
             try
             {
-                // Retornar quantidade ao estoque
-                var retornouEstoque = await _estoqueService.RetornarEstoqueAgrotoxicoAsync(aplicacao.agrotoxicoID, aplicacao.qtde, usuarioId);
-                if (!retornouEstoque)
-                {
-                    return BadRequest(new { message = "Erro ao retornar estoque" });
-                }
+                await _estoqueService.RetornarEstoqueAgrotoxicoAsync(aplicacao.agrotoxicoID, aplicacao.qtde, usuarioId);
 
                 _context.Aplicacoes.Remove(aplicacao);
                 await _context.SaveChangesAsync();
-                
-                // Commit da transação
+
+                var mov = await _context.MovimentacoesEstoque
+                    .FirstOrDefaultAsync(m => m.origemAplicacaoID == aplicacao.Id && m.UsuarioId == usuarioId);
+
+                if (mov != null)
+                {
+                    _context.MovimentacoesEstoque.Remove(mov);
+                    await _context.SaveChangesAsync();
+                }
+
                 await transaction.CommitAsync();
             }
             catch (Exception ex)
             {
-                // Rollback em caso de erro
                 await transaction.RollbackAsync();
                 return BadRequest(new { message = $"Erro ao excluir aplicação: {ex.Message}" });
             }
 
             return NoContent();
-        }
-
-        private bool AplicacaoExists(int id, int usuarioId)
-        {
-            return _context.Aplicacoes.Any(e => e.Id == id && e.UsuarioId == usuarioId);
         }
     }
 }

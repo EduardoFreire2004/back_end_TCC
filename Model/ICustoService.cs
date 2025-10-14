@@ -20,11 +20,6 @@ namespace API_TCC.Model
         Task<CustoAplicacaoInsumoDto> CalcularCustoAplicacaoInsumoAsync(int aplicacaoInsumoId, int usuarioId);
         
         /// <summary>
-        /// Calcula custos de movimentações de estoque
-        /// </summary>
-        Task<CustoMovimentacaoDto> CalcularCustoMovimentacaoAsync(int movimentacaoId, int usuarioId);
-        
-        /// <summary>
         /// Obtém resumo de custos por período
         /// </summary>
         Task<ResumoCustosDto> ObterResumoCustosAsync(int lavouraId, int usuarioId, DateTime dataInicio, DateTime dataFim);

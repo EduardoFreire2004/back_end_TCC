@@ -97,31 +97,6 @@ namespace API_TCC.Controllers
                 return StatusCode(500, new { message = "Erro interno do servidor" });
             }
         }
-
-        /// <summary>
-        /// Calcula custos de uma movimentação específica
-        /// </summary>
-        [HttpGet("movimentacao/{movimentacaoId}")]
-        public async Task<ActionResult<CustoMovimentacaoDto>> CalcularCustoMovimentacao(int movimentacaoId)
-        {
-            try
-            {
-                var usuarioId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0");
-                
-                var custo = await _custoService.CalcularCustoMovimentacaoAsync(movimentacaoId, usuarioId);
-                return Ok(custo);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao calcular custo da movimentação {MovimentacaoId}", movimentacaoId);
-                return StatusCode(500, new { message = "Erro interno do servidor" });
-            }
-        }
-
         /// <summary>
         /// Obtém resumo de custos por período
         /// </summary>
