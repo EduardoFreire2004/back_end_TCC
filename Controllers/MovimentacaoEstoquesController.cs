@@ -222,6 +222,73 @@ namespace API_TCC.Controllers
             }
         }
 
+        [HttpGet("filtrar")]
+        public async Task<ActionResult<IEnumerable<MovimentacaoEstoque>>> FiltrarMovimentacoes(
+    [FromQuery] DateTime? dataInicial,
+    [FromQuery] DateTime? dataFinal,
+    [FromQuery] TipoMovimentacao? tipo,
+    [FromQuery] string? tipoItem,
+    [FromQuery] int? lavouraId,
+    [FromQuery] bool ultimoMes = false)
+        {
+            var usuarioId = GetUsuarioId();
+            var query = _context.MovimentacoesEstoque
+                .Include(m => m.Lavoura)
+                .Include(m => m.Agrotoxico)
+                .Include(m => m.Semente)
+                .Include(m => m.Insumo)
+                .Where(m => m.UsuarioId == usuarioId)
+                .AsQueryable();
+
+            // 🔹 Filtro do último mês
+            if (ultimoMes)
+            {
+                var hoje = DateTime.UtcNow;
+                var primeiroDiaMesAnterior = new DateTime(hoje.Year, hoje.Month, 1).AddMonths(-1);
+                var ultimoDiaMesAnterior = new DateTime(hoje.Year, hoje.Month, 1).AddDays(-1);
+
+                query = query.Where(m => m.dataHora >= primeiroDiaMesAnterior && m.dataHora <= ultimoDiaMesAnterior);
+            }
+            else
+            {
+                // 🔹 Filtro por intervalo de datas (caso último mês não esteja ativado)
+                if (dataInicial.HasValue)
+                    query = query.Where(m => m.dataHora >= dataInicial.Value);
+
+                if (dataFinal.HasValue)
+                    query = query.Where(m => m.dataHora <= dataFinal.Value);
+            }
+
+            // 🔹 Filtro por tipo de movimentação (Entrada/Saída)
+            if (tipo.HasValue)
+                query = query.Where(m => m.movimentacao == tipo.Value);
+
+            // 🔹 Filtro por tipo de item (Agrotóxico, Semente, Insumo)
+            if (!string.IsNullOrEmpty(tipoItem))
+            {
+                tipoItem = tipoItem.ToLower();
+
+                if (tipoItem == "agrotoxico")
+                    query = query.Where(m => m.agrotoxicoID != null);
+                else if (tipoItem == "semente")
+                    query = query.Where(m => m.sementeID != null);
+                else if (tipoItem == "insumo")
+                    query = query.Where(m => m.insumoID != null);
+            }
+
+            // 🔹 Filtro por lavoura
+            if (lavouraId.HasValue)
+                query = query.Where(m => m.lavouraID == lavouraId.Value);
+
+            // 🔹 Ordenação por data mais recente
+            query = query.OrderByDescending(m => m.dataHora);
+
+            var resultados = await query.ToListAsync();
+
+            return Ok(resultados);
+        }
+
+
 
         // DELETE: api/MovimentacaoEstoques/5
         [HttpDelete("{id}")]

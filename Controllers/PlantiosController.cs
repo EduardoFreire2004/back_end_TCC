@@ -163,35 +163,63 @@ namespace API_TCC.Controllers
             if (plantioExistente == null)
                 return NotFound();
 
-            // Controle de estoque se houve mudança de quantidade
-            if (dto.qtde != plantioExistente.qtde)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                if (dto.qtde > plantioExistente.qtde)
+                // Controle de estoque se houve mudança de quantidade
+                if (dto.qtde != plantioExistente.qtde)
                 {
-                    var adicional = dto.qtde - plantioExistente.qtde;
-                    var estoque = await _estoqueService.ObterEstoqueDisponivelSementeAsync(dto.sementeID, usuarioId);
+                    if (dto.qtde > plantioExistente.qtde)
+                    {
+                        var adicional = dto.qtde - plantioExistente.qtde;
+                        var estoque = await _estoqueService.ObterEstoqueDisponivelSementeAsync(dto.sementeID, usuarioId);
 
-                    if (estoque < adicional)
-                        return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoque}, Necessário: {adicional}" });
+                        if (estoque < adicional)
+                            return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoque}, Necessário: {adicional}" });
 
-                    await _estoqueService.BaixarEstoqueSementeAsync(dto.sementeID, adicional, usuarioId);
+                        await _estoqueService.BaixarEstoqueSementeAsync(dto.sementeID, adicional, usuarioId);
+                    }
+                    else
+                    {
+                        var retorno = plantioExistente.qtde - dto.qtde;
+                        await _estoqueService.RetornarEstoqueSementeAsync(dto.sementeID, retorno, usuarioId);
+                    }
                 }
-                else
+
+                // Atualiza os campos do plantio
+                plantioExistente.lavouraID = dto.lavouraID;
+                plantioExistente.sementeID = dto.sementeID;
+                plantioExistente.descricao = dto.descricao;
+                plantioExistente.dataHora = dto.dataHora;
+                plantioExistente.areaPlantada = dto.areaPlantada;
+                plantioExistente.qtde = dto.qtde;
+
+                _context.Entry(plantioExistente).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                // Atualizar movimentação associada
+                var movimentacao = await _context.MovimentacoesEstoque
+                    .FirstOrDefaultAsync(m => m.origemPlantioID == plantioExistente.Id && m.UsuarioId == usuarioId);
+
+                if (movimentacao != null)
                 {
-                    var retorno = plantioExistente.qtde - dto.qtde;
-                    await _estoqueService.RetornarEstoqueSementeAsync(dto.sementeID, retorno, usuarioId);
+                    movimentacao.qtde = dto.qtde;
+                    movimentacao.dataHora = dto.dataHora;
+                    movimentacao.descricao = string.IsNullOrWhiteSpace(dto.descricao)
+                        ? "Saída por Plantio de Semente"
+                        : $"Saída por Plantio de Semente - {dto.descricao}";
+
+                    _context.Entry(movimentacao).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
                 }
+
+                await transaction.CommitAsync();
             }
-
-            // Atualiza os campos necessários
-            plantioExistente.lavouraID = dto.lavouraID;
-            plantioExistente.sementeID = dto.sementeID;
-            plantioExistente.descricao = dto.descricao;
-            plantioExistente.dataHora = dto.dataHora;
-            plantioExistente.areaPlantada = dto.areaPlantada;
-            plantioExistente.qtde = dto.qtde;
-
-            await _context.SaveChangesAsync();
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { message = $"Erro ao atualizar plantio: {ex.Message}" });
+            }
 
             return NoContent();
         }
@@ -202,60 +230,70 @@ namespace API_TCC.Controllers
         {
             var usuarioId = GetUsuarioId();
 
-            if (!await _estoqueService.VerificarEstoqueSementeAsync(dto.sementeID, dto.qtde, usuarioId))
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                var estoque = await _estoqueService.ObterEstoqueDisponivelSementeAsync(dto.sementeID, usuarioId);
-                return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoque}, Solicitado: {dto.qtde}" });
+                if (!await _estoqueService.VerificarEstoqueSementeAsync(dto.sementeID, dto.qtde, usuarioId))
+                {
+                    var estoque = await _estoqueService.ObterEstoqueDisponivelSementeAsync(dto.sementeID, usuarioId);
+                    return BadRequest(new { message = $"Estoque insuficiente. Disponível: {estoque}, Solicitado: {dto.qtde}" });
+                }
+
+                await _estoqueService.BaixarEstoqueSementeAsync(dto.sementeID, dto.qtde, usuarioId);
+
+                var plantio = new Plantio
+                {
+                    lavouraID = dto.lavouraID,
+                    sementeID = dto.sementeID,
+                    descricao = dto.descricao,
+                    dataHora = dto.dataHora,
+                    areaPlantada = dto.areaPlantada,
+                    qtde = dto.qtde,
+                    UsuarioId = usuarioId
+                };
+
+                _context.Plantios.Add(plantio);
+                await _context.SaveChangesAsync();
+
+                // Registrar movimentação
+                var movimentacao = new MovimentacaoEstoque
+                {
+                    lavouraID = plantio.lavouraID,
+                    movimentacao = TipoMovimentacao.Saida,
+                    sementeID = plantio.sementeID,
+                    qtde = plantio.qtde,
+                    dataHora = plantio.dataHora,
+                    descricao = string.IsNullOrWhiteSpace(dto.descricao)
+                        ? "Saída por Plantio de Semente"
+                        : $"Saída por Plantio de Semente - {dto.descricao}",
+                    UsuarioId = usuarioId,
+                    origemPlantioID = plantio.Id
+                };
+
+                _context.MovimentacoesEstoque.Add(movimentacao);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                var result = new PlantioDTO
+                {
+                    Id = plantio.Id,
+                    UsuarioId = usuarioId,
+                    lavouraID = plantio.lavouraID,
+                    sementeID = plantio.sementeID,
+                    descricao = plantio.descricao,
+                    dataHora = plantio.dataHora,
+                    areaPlantada = plantio.areaPlantada,
+                    qtde = plantio.qtde
+                };
+
+                return CreatedAtAction(nameof(GetPlantio), new { id = plantio.Id }, result);
             }
-
-            await _estoqueService.BaixarEstoqueSementeAsync(dto.sementeID, dto.qtde, usuarioId);
-
-            var plantio = new Plantio
+            catch (Exception ex)
             {
-                lavouraID = dto.lavouraID,
-                sementeID = dto.sementeID,
-                descricao = dto.descricao,
-                dataHora = dto.dataHora,
-                areaPlantada = dto.areaPlantada,
-                qtde = dto.qtde,
-                UsuarioId = usuarioId
-            };
-
-            _context.Plantios.Add(plantio);
-            await _context.SaveChangesAsync();
-
-            // Registrar movimentação após salvar (para ter o Id)
-            var movimentacao = new MovimentacaoEstoque
-            {
-                lavouraID = plantio.lavouraID,
-                movimentacao = TipoMovimentacao.Saida,
-                sementeID = plantio.sementeID,
-                qtde = plantio.qtde,
-                dataHora = plantio.dataHora,
-                descricao = string.IsNullOrWhiteSpace(dto.descricao)
-                    ? "Saída por Plantio de Semente"
-                    : $"Saída por Plantio de Semente - {dto.descricao}",
-                UsuarioId = usuarioId,
-                origemPlantioID = plantio.Id
-            };
-
-            _context.MovimentacoesEstoque.Add(movimentacao);
-            await _context.SaveChangesAsync();
-
-            // Retorno formatado em DTO
-            var result = new PlantioDTO
-            {
-                Id = plantio.Id,
-                UsuarioId = usuarioId,
-                lavouraID = plantio.lavouraID,
-                sementeID = plantio.sementeID,
-                descricao = plantio.descricao,
-                dataHora = plantio.dataHora,
-                areaPlantada = plantio.areaPlantada,
-                qtde = plantio.qtde
-            };
-
-            return CreatedAtAction(nameof(GetPlantio), new { id = plantio.Id }, result);
+                await transaction.RollbackAsync();
+                return BadRequest(new { message = $"Erro ao criar plantio: {ex.Message}" });
+            }
         }
 
         // DELETE: api/Plantios/5
@@ -264,19 +302,40 @@ namespace API_TCC.Controllers
         {
             var usuarioId = GetUsuarioId();
 
-            var plantio = await _context.Plantios
-                .Where(p => p.Id == id && p.UsuarioId == usuarioId)
-                .FirstOrDefaultAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var plantio = await _context.Plantios
+                    .Where(p => p.Id == id && p.UsuarioId == usuarioId)
+                    .FirstOrDefaultAsync();
 
-            if (plantio == null)
-                return NotFound();
+                if (plantio == null)
+                    return NotFound();
 
-            await _estoqueService.RetornarEstoqueSementeAsync(plantio.sementeID, plantio.qtde, usuarioId);
+                // Retornar estoque
+                await _estoqueService.RetornarEstoqueSementeAsync(plantio.sementeID, plantio.qtde, usuarioId);
 
-            _context.Plantios.Remove(plantio);
-            await _context.SaveChangesAsync();
+                // Remover movimentação associada
+                var movimentacao = await _context.MovimentacoesEstoque
+                    .FirstOrDefaultAsync(m => m.origemPlantioID == id && m.UsuarioId == usuarioId);
 
-            return Ok(new { message = "Plantio excluído com sucesso" });
+                if (movimentacao != null)
+                {
+                    _context.MovimentacoesEstoque.Remove(movimentacao);
+                    await _context.SaveChangesAsync();
+                }
+
+                _context.Plantios.Remove(plantio);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return Ok(new { message = "Plantio excluído com sucesso" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return BadRequest(new { message = $"Erro ao excluir plantio: {ex.Message}" });
+            }
         }
 
         private bool PlantioExists(int id, int usuarioId)

@@ -7,7 +7,6 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuração JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
 var key = Encoding.ASCII.GetBytes(secretKey ?? "chave_padrao_para_desenvolvimento");
@@ -15,7 +14,6 @@ var key = Encoding.ASCII.GetBytes(secretKey ?? "chave_padrao_para_desenvolviment
 builder.Services.AddDbContext<Contexto>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("conexao")));
 
-// Configuração de Autenticação JWT
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -51,7 +49,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Registrar serviços
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
